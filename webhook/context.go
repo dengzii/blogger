@@ -22,14 +22,14 @@ func (that *Context) Header(key string, value string) {
 	that.Writer.Header().Add(key, value)
 }
 
-func (that *Context) writeString(str string) (err error) {
+func (that *Context) WriteString(str string) (err error) {
 	if that.Writer != nil {
 		_, err = that.Writer.Write(str2ByteArr(str))
 	}
 	return
 }
 
-func (that *Context) writeJson(model interface{}) error {
+func (that *Context) WriteJson(model interface{}) error {
 	j, err := json.Marshal(model)
 	if err == nil {
 		_, err = that.Writer.Write(j)
