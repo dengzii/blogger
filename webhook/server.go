@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"blogger/logger"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -38,7 +39,7 @@ func (that WebHook) Register(id string, accessToken string, action Action) {
 	path := that.BasePath + id + "/"
 	that.ActionPath[path] = id
 	that.webhook(path, func(ctx *Context) {
-		logDebug(fmt.Sprintf("action trigger: %s, token=%s", path, ctx.Query.Get("AccessToken")))
+		logger.D("webhook", fmt.Sprintf("action trigger: %s, token=%s", path, ctx.Query.Get("AccessToken")))
 		if ctx.Query.Get("AccessToken") != accessToken {
 			ctx.Status(http.StatusForbidden)
 			return
@@ -52,7 +53,7 @@ func (that WebHook) Register(id string, accessToken string, action Action) {
 func (that *WebHook) Listen() {
 	addr := fmt.Sprintf("%s:%d", that.Host, that.Port)
 
-	logDebug("start server: " + addr)
+	logger.D("webhook.listen", "start server: "+addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		fmt.Println("Cannot start server due to: " + err.Error())
@@ -60,9 +61,9 @@ func (that *WebHook) Listen() {
 }
 
 func (that WebHook) webhook(path string, handler func(ctx *Context)) {
-	logDebug("register: " + path)
+	logger.D("webhook.register", path)
 	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
-		logDebug("http " + request.URL.Path)
+		logger.D("webhook.request", "http "+request.URL.Path)
 		p := request.URL.Path //strings.TrimLeft(request.URL.Path, "/")
 		if that.ActionPath[p] == "" {
 			writer.WriteHeader(http.StatusNotFound)

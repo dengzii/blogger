@@ -11,7 +11,8 @@ var (
 )
 
 type GitConfig struct {
-	Repo string
+	Repo        string
+	AccessToken string
 }
 
 type BlogConfig struct {

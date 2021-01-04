@@ -1,0 +1,149 @@
+package repo
+
+import (
+	"blogger/logger"
+	"github.com/go-git/go-billy/v5/osfs"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+	"os"
+)
+
+type Repo interface {
+	Update()
+	Pull()
+	Clone()
+}
+
+type UniversalRepo struct {
+	Url           string
+	GitDir        string
+	DefaultBranch string
+
+	out  *os.File
+	repo *git.Repository
+	auth *http.TokenAuth
+}
+
+type Auth struct {
+	http.TokenAuth
+}
+
+const (
+	remoteName = "origin"
+	depth      = 2
+)
+
+func New(url string, accessToken string, gitDir string) UniversalRepo {
+	var auth *http.TokenAuth
+	if len(accessToken) != 0 {
+		auth = &http.TokenAuth{
+			Token: accessToken,
+		}
+	}
+	return UniversalRepo{
+		Url:           url,
+		GitDir:        gitDir,
+		DefaultBranch: "master",
+		out:           nil, //os.Stdout,
+		auth:          auth,
+	}
+}
+
+func (that *UniversalRepo) Update() {
+
+	exist := false
+	if that.Exist() {
+		exist = true
+		r, err := git.PlainOpen(that.GitDir)
+		if err != nil {
+			checkError(err, "update.open")
+			if err == git.ErrRepositoryNotExists {
+				exist = false
+			} else {
+				return
+			}
+		} else {
+			that.repo = r
+		}
+	}
+	if !exist {
+		that.Clone()
+	}
+	that.Pull()
+}
+
+func (that *UniversalRepo) Remove() {
+	err := os.RemoveAll(that.GitDir)
+	checkError(err, "remove")
+}
+
+func (that *UniversalRepo) Clone() bool {
+
+	fs := osfs.New(that.GitDir)
+	storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
+
+	repo, err := git.Clone(storage, fs, &git.CloneOptions{
+		URL:           that.Url,
+		Progress:      that.out,
+		Auth:          that.auth,
+		RemoteName:    remoteName,
+		ReferenceName: plumbing.NewBranchReferenceName(that.DefaultBranch),
+		SingleBranch:  true,
+		NoCheckout:    false,
+		Depth:         depth,
+	})
+
+	if checkError(err, "clone") {
+		return false
+	}
+	that.repo = repo
+	logger.D("git.clone", "done")
+
+	return true
+}
+
+func (that *UniversalRepo) Pull() {
+
+	if that.repo == nil {
+		panic("no repository")
+	}
+	wt, err := that.repo.Worktree()
+	if checkError(err, "pull.wt") {
+		return
+	}
+	err = wt.Pull(&git.PullOptions{
+		RemoteName:    remoteName,
+		ReferenceName: plumbing.NewBranchReferenceName(that.DefaultBranch),
+		SingleBranch:  true,
+		Depth:         depth,
+		Auth:          that.auth,
+		Progress:      that.out,
+		Force:         false,
+	})
+	if checkError(err, "pull") {
+		return
+	}
+	logger.D("git.pull", "done")
+}
+
+func (that *UniversalRepo) Exist() bool {
+	_, err := os.Stat(that.GitDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+		checkError(err, "exist")
+	}
+	return true
+}
+
+func checkError(err error, where string) bool {
+	if err != nil {
+		logger.E("git."+where, err.Error())
+		return true
+	}
+	return false
+}

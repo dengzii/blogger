@@ -1,10 +1,10 @@
 [Git]
 Repo = "https://github.com/dengzii/blog/"
+AccessToken = ""
 
 [Blog]
 Host = "0.0.0.0"
 Port = 8080
-Title = "dengzii's blog"
 Template = "./template"
 Site = "./www"
 AccessToken = "abcd"
