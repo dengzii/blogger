@@ -16,13 +16,15 @@ const (
 	TypeUnknown     = -1
 )
 
+const pathSep = string(os.PathSeparator)
+
 var includeFiles = []string{
 	".md",
 }
 
-var excludeFiles = []string{}
-
-const pathSep = string(os.PathSeparator)
+var excludeFiles = []string{
+	pathSep + ".git",
+}
 
 var typeNameMap = map[string]int{}
 
@@ -31,6 +33,12 @@ func init() {
 	typeNameMap["friends.md"] = TypeFriends
 	typeNameMap["site-info.md"] = TypeSiteInfo
 	typeNameMap["description.md"] = TypeDescription
+
+	for i, ele := range excludeFiles {
+		s := strings.ReplaceAll(ele, "/", pathSep)
+		s = strings.TrimRight(s, pathSep)
+		excludeFiles[i] = s
+	}
 }
 
 type SiteFile struct {
@@ -41,9 +49,9 @@ type SiteFile struct {
 
 func Parse(dirPath string) (blogFile *BlogFile, err error) {
 
-	dirPath = strings.TrimRight(dirPath, "/")
+	dirPath = strings.TrimRight(dirPath, pathSep)
 
-	name := dirPath[strings.LastIndex(dirPath, "/")+1:]
+	name := dirPath[strings.LastIndex(dirPath, pathSep)+1:]
 	blogFile = &BlogFile{
 		Category: []CategoryFile{},
 		SiteFile: &SiteFile{
@@ -67,7 +75,9 @@ func Parse(dirPath string) (blogFile *BlogFile, err error) {
 		}
 
 		if fileInfo.IsDir() {
-
+			if skipFile(fileInfo) {
+				continue
+			}
 			dirFile := toSiteFile(dirPath, fileInfo)
 			dirFile.Type = TypeCategory
 			categoryFile := CategoryFile{
@@ -80,31 +90,28 @@ func Parse(dirPath string) (blogFile *BlogFile, err error) {
 				return
 			}
 			for _, fi := range categoryDir {
+				if skipFile(fi) {
+					continue
+				}
 				sf := toSiteFile(dirFile.Path, fi)
 				categoryFile.Article = append(categoryFile.Article, ArticleFile{&sf})
 			}
 
 			blogFile.Category = append(blogFile.Category, categoryFile)
 		} else {
-			skip := true
-			for _, include := range includeFiles {
-				ignoreCase := strings.ToLower(fileInfo.Name())
-				if strings.HasSuffix(ignoreCase, include) {
-					skip = false
-				}
+			if skipFile(fileInfo) {
+				continue
 			}
-			if !skip {
-				f := toSiteFile(dirPath, fileInfo)
-				switch f.Type {
-				case TypeArticle:
-					// ignore root
-				case TypeDescription:
-					blogFile.Description = DescriptionFile{&f}
-				case TypeSiteInfo:
-					blogFile.SiteInfo = SiteInfoFile{&f}
-				case TypeFriends:
-					blogFile.Friend = FriendsFile{&f}
-				}
+			f := toSiteFile(dirPath, fileInfo)
+			switch f.Type {
+			case TypeArticle:
+				// ignore root
+			case TypeDescription:
+				blogFile.Description = DescriptionFile{&f}
+			case TypeSiteInfo:
+				blogFile.SiteInfo = SiteInfoFile{&f}
+			case TypeFriends:
+				blogFile.Friend = FriendsFile{&f}
 			}
 		}
 	}
@@ -148,6 +155,19 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func skipFile(fileInfo os.FileInfo) bool {
+	if fileInfo.IsDir() {
+		return contains(excludeFiles, pathSep+fileInfo.Name())
+	}
+	for _, include := range includeFiles {
+		ignoreCase := strings.ToLower(fileInfo.Name())
+		if strings.HasSuffix(ignoreCase, include) {
+			return false
+		}
+	}
+	return true
 }
 
 func toSiteFile(dirPath string, info os.FileInfo) SiteFile {
