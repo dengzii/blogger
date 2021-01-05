@@ -1,31 +1,37 @@
 package gen
 
 import (
+	"bufio"
+	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 )
 
+// expressions file type
 const (
-	TypeArticle     = 1
-	TypeFriends     = 2
-	TypeSiteInfo    = 3
-	TypeDescription = 4
-	TypeDir         = 5
-	TypeCategory    = 6
-	TypeUnknown     = -1
+	typeArticle     = 1
+	typeFriends     = 2
+	typeSiteInfo    = 3
+	typeDescription = 4
+	typeDir         = 5
+	typeCategory    = 6
+	typeUnknown     = -1
 )
 
 const pathSep = string(os.PathSeparator)
 
 // specify the include files suffix
-var IncludeFiles = []string{
+var includeFiles = []string{
 	".md",
 	".html",
+	".json",
 }
 
 // specify the exclude files
-var ExcludeFiles = []string{
+var excludeFiles = []string{
 	pathSep + ".git",
 }
 
@@ -33,41 +39,79 @@ var ExcludeFiles = []string{
 var typeNameMap = map[string]int{}
 
 func init() {
-	typeNameMap["*.md"] = TypeArticle
-	typeNameMap["*.html"] = TypeArticle
-	typeNameMap["friends.md"] = TypeFriends
-	typeNameMap["site-info.md"] = TypeSiteInfo
-	typeNameMap["description.md"] = TypeDescription
+	typeNameMap["*.md"] = typeArticle
+	typeNameMap["*.html"] = typeArticle
+	typeNameMap["friends.json"] = typeFriends
+	typeNameMap["site-info.md"] = typeSiteInfo
+	typeNameMap["description.md"] = typeDescription
 
-	for i, ele := range ExcludeFiles {
+	for i, ele := range excludeFiles {
 		s := strings.ReplaceAll(ele, "/", pathSep)
 		s = strings.TrimRight(s, pathSep)
-		ExcludeFiles[i] = s
+		excludeFiles[i] = s
 	}
 }
 
-type SiteFile struct {
-	Name string
-	Type int
-	Path string
+type siteFile struct {
+	name     string
+	fileType int
+	path     string
+	modTime  time.Time
 }
 
-// Check and parse specified dir to BlogFile.
-func Parse(dirPath string) (blogFile *BlogFile, err error) {
+func (that *siteFile) read() (error, string) {
+
+	s, err := os.Stat(that.path)
+	if err != nil {
+		return err, ""
+	}
+	if s.IsDir() {
+		return errors.New("cannot read directory"), ""
+	}
+
+	f, err := os.Open(that.path)
+	if err != nil {
+		return err, ""
+	}
+	if f != nil {
+		defer func() {
+			err = f.Close()
+			return
+		}()
+	}
+
+	b := ""
+	bfRd := bufio.NewReader(f)
+
+	for {
+		line, err := bfRd.ReadBytes('\n')
+		b += string(line)
+		if err != nil {
+			if err == io.EOF {
+				return nil, b
+			}
+			return err, b
+		}
+	}
+}
+
+// Check and parse specified dir to blogFile.
+func parse(dirPath string) (bf *blogFile, err error) {
 
 	dirPath = strings.TrimRight(dirPath, pathSep)
+	i, e := os.Stat(dirPath)
 
-	name := dirPath[strings.LastIndex(dirPath, pathSep)+1:]
-	blogFile = &BlogFile{
-		Category: []CategoryFile{},
-		SiteFile: &SiteFile{
-			Name: name,
-			Type: TypeDir,
-			Path: dirPath,
-		},
+	if e != nil {
+		return nil, e
 	}
-	err = nil
 
+	sf := toSiteFile(strings.TrimRight(dirPath, i.Name()), i)
+	bf = &blogFile{
+		siteFile: &sf,
+		category: []categoryFile{},
+	}
+
+	err = nil
 	dir, e := ioutil.ReadDir(dirPath)
 	if e != nil {
 		err = e
@@ -82,12 +126,12 @@ func Parse(dirPath string) (blogFile *BlogFile, err error) {
 
 		if fileInfo.IsDir() {
 			dirFile := toSiteFile(dirPath, fileInfo)
-			dirFile.Type = TypeCategory
-			categoryFile := CategoryFile{
-				SiteFile: &dirFile,
-				Article:  []ArticleFile{},
+			dirFile.fileType = typeCategory
+			categoryFile := categoryFile{
+				siteFile: &dirFile,
+				Article:  []articleFile{},
 			}
-			categoryDir, e := ioutil.ReadDir(dirFile.Path)
+			categoryDir, e := ioutil.ReadDir(dirFile.path)
 			if e != nil {
 				err = e
 				return
@@ -96,22 +140,22 @@ func Parse(dirPath string) (blogFile *BlogFile, err error) {
 				if skipFile(fi) {
 					continue
 				}
-				sf := toSiteFile(dirFile.Path, fi)
-				categoryFile.Article = append(categoryFile.Article, ArticleFile{&sf})
+				sf := toSiteFile(dirFile.path, fi)
+				categoryFile.Article = append(categoryFile.Article, articleFile{&sf})
 			}
 
-			blogFile.Category = append(blogFile.Category, categoryFile)
+			bf.category = append(bf.category, categoryFile)
 		} else {
 			f := toSiteFile(dirPath, fileInfo)
-			switch f.Type {
-			case TypeArticle:
+			switch f.fileType {
+			case typeArticle:
 				// ignore root
-			case TypeDescription:
-				blogFile.Description = DescriptionFile{&f}
-			case TypeSiteInfo:
-				blogFile.SiteInfo = SiteInfoFile{&f}
-			case TypeFriends:
-				blogFile.Friend = FriendsFile{&f}
+			case typeDescription:
+				bf.description = &descriptionFile{&f}
+			case typeSiteInfo:
+				bf.siteInfo = &siteInfoFile{&f}
+			case typeFriends:
+				bf.friend = &friendsFile{&f}
 			}
 		}
 	}
@@ -119,33 +163,40 @@ func Parse(dirPath string) (blogFile *BlogFile, err error) {
 	return
 }
 
-type BlogFile struct {
-	Friend      FriendsFile
-	SiteInfo    SiteInfoFile
-	Description DescriptionFile
-	Category    []CategoryFile
-	*SiteFile
+type blogFile struct {
+	friend      *friendsFile
+	siteInfo    *siteInfoFile
+	description *descriptionFile
+	category    []categoryFile
+	*siteFile
 }
 
-type FriendsFile struct {
-	*SiteFile
+func (that *blogFile) validate() error {
+	if that.siteInfo == nil {
+		return errors.New("file 'site-info.json' dose not exist")
+	}
+	return nil
 }
 
-type SiteInfoFile struct {
-	*SiteFile
+type friendsFile struct {
+	*siteFile
 }
 
-type DescriptionFile struct {
-	*SiteFile
+type siteInfoFile struct {
+	*siteFile
 }
 
-type ArticleFile struct {
-	*SiteFile
+type descriptionFile struct {
+	*siteFile
 }
 
-type CategoryFile struct {
-	*SiteFile
-	Article []ArticleFile
+type articleFile struct {
+	*siteFile
+}
+
+type categoryFile struct {
+	*siteFile
+	Article []articleFile
 }
 
 func contains(slice []string, item ...string) bool {
@@ -167,12 +218,12 @@ func skipFile(fileInfo os.FileInfo) bool {
 	}
 
 	// check exclude files
-	if contains(ExcludeFiles, pathSep+fileInfo.Name(), fileInfo.Name()) {
+	if contains(excludeFiles, pathSep+fileInfo.Name(), fileInfo.Name()) {
 		return true
 	}
 
 	// check include files
-	for _, include := range IncludeFiles {
+	for _, include := range includeFiles {
 		ignoreCase := strings.ToLower(fileInfo.Name())
 		if strings.HasSuffix(ignoreCase, include) {
 			return false
@@ -184,10 +235,10 @@ func skipFile(fileInfo os.FileInfo) bool {
 	return !fileInfo.IsDir()
 }
 
-func toSiteFile(dirPath string, info os.FileInfo) SiteFile {
+func toSiteFile(dirPath string, info os.FileInfo) siteFile {
 
 	path := dirPath + pathSep + info.Name()
-	t := TypeUnknown
+	t := typeUnknown
 
 	suffixPattern := info.Name()
 	if !info.IsDir() {
@@ -196,7 +247,7 @@ func toSiteFile(dirPath string, info os.FileInfo) SiteFile {
 
 	if info.IsDir() {
 
-		t = TypeDir
+		t = typeDir
 
 	} else if typeNameMap[info.Name()] > 0 {
 
@@ -207,9 +258,10 @@ func toSiteFile(dirPath string, info os.FileInfo) SiteFile {
 		t = typeNameMap[info.Name()]
 	}
 
-	return SiteFile{
-		Name: info.Name(),
-		Type: t,
-		Path: path,
+	return siteFile{
+		name:     info.Name(),
+		fileType: t,
+		path:     path,
+		modTime:  info.ModTime(),
 	}
 }

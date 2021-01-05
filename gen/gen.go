@@ -2,7 +2,6 @@ package gen
 
 import (
 	"blogger/logger"
-	"os"
 	"time"
 )
 
@@ -27,23 +26,11 @@ type Article struct {
 	Category     string
 }
 
-func Source(dir string) {
+func From(dir string) {
 
-	_, err := os.Stat(dir)
+	_, err := parse(dir)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return
-		}
-	}
-
-	file, err := os.OpenFile(dir, os.O_RDONLY, os.ModeDir)
-	if err != nil {
-		logger.E("gen.source", err.Error())
-		return
-	}
-	if file == nil {
-		logger.E("gen.source", "cannot open dir "+dir)
-		return
+		logger.Err("gen.from", err)
 	}
 
 }
