@@ -18,26 +18,31 @@ const (
 
 const pathSep = string(os.PathSeparator)
 
-var includeFiles = []string{
+// specify the include files suffix
+var IncludeFiles = []string{
 	".md",
+	".html",
 }
 
-var excludeFiles = []string{
+// specify the exclude files
+var ExcludeFiles = []string{
 	pathSep + ".git",
 }
 
+// the pair of string file name and int type
 var typeNameMap = map[string]int{}
 
 func init() {
 	typeNameMap["*.md"] = TypeArticle
+	typeNameMap["*.html"] = TypeArticle
 	typeNameMap["friends.md"] = TypeFriends
 	typeNameMap["site-info.md"] = TypeSiteInfo
 	typeNameMap["description.md"] = TypeDescription
 
-	for i, ele := range excludeFiles {
+	for i, ele := range ExcludeFiles {
 		s := strings.ReplaceAll(ele, "/", pathSep)
 		s = strings.TrimRight(s, pathSep)
-		excludeFiles[i] = s
+		ExcludeFiles[i] = s
 	}
 }
 
@@ -47,6 +52,7 @@ type SiteFile struct {
 	Path string
 }
 
+// Check and parse specified dir to BlogFile.
 func Parse(dirPath string) (blogFile *BlogFile, err error) {
 
 	dirPath = strings.TrimRight(dirPath, pathSep)
@@ -70,14 +76,11 @@ func Parse(dirPath string) (blogFile *BlogFile, err error) {
 
 	for _, fileInfo := range dir {
 
-		if contains(excludeFiles, fileInfo.Name()) {
+		if skipFile(fileInfo) {
 			continue
 		}
 
 		if fileInfo.IsDir() {
-			if skipFile(fileInfo) {
-				continue
-			}
 			dirFile := toSiteFile(dirPath, fileInfo)
 			dirFile.Type = TypeCategory
 			categoryFile := CategoryFile{
@@ -99,9 +102,6 @@ func Parse(dirPath string) (blogFile *BlogFile, err error) {
 
 			blogFile.Category = append(blogFile.Category, categoryFile)
 		} else {
-			if skipFile(fileInfo) {
-				continue
-			}
 			f := toSiteFile(dirPath, fileInfo)
 			switch f.Type {
 			case TypeArticle:
@@ -148,33 +148,51 @@ type CategoryFile struct {
 	Article []ArticleFile
 }
 
-func contains(slice []string, item string) bool {
+func contains(slice []string, item ...string) bool {
 	for i := range slice {
-		if slice[i] == item {
-			return true
+		for _, contain := range item {
+			if slice[i] == contain {
+				return true
+			}
 		}
 	}
 	return false
 }
 
 func skipFile(fileInfo os.FileInfo) bool {
-	if fileInfo.IsDir() {
-		return contains(excludeFiles, pathSep+fileInfo.Name())
+
+	// skip hidden files
+	if strings.HasPrefix(fileInfo.Name(), ".") {
+		return true
 	}
-	for _, include := range includeFiles {
+
+	// check exclude files
+	if contains(ExcludeFiles, pathSep+fileInfo.Name(), fileInfo.Name()) {
+		return true
+	}
+
+	// check include files
+	for _, include := range IncludeFiles {
 		ignoreCase := strings.ToLower(fileInfo.Name())
 		if strings.HasSuffix(ignoreCase, include) {
 			return false
 		}
 	}
-	return true
+
+	// by default, files that are not included will be excluded
+	// directories that are not included will be included
+	return !fileInfo.IsDir()
 }
 
 func toSiteFile(dirPath string, info os.FileInfo) SiteFile {
 
 	path := dirPath + pathSep + info.Name()
-
 	t := TypeUnknown
+
+	suffixPattern := info.Name()
+	if !info.IsDir() {
+		suffixPattern = "*" + suffixPattern[strings.LastIndex(suffixPattern, "."):]
+	}
 
 	if info.IsDir() {
 
@@ -184,9 +202,9 @@ func toSiteFile(dirPath string, info os.FileInfo) SiteFile {
 
 		t = typeNameMap[info.Name()]
 
-	} else if strings.HasSuffix(info.Name(), ".md") {
+	} else if typeNameMap[suffixPattern] > 0 {
 
-		t = TypeArticle
+		t = typeNameMap[info.Name()]
 	}
 
 	return SiteFile{
