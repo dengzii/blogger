@@ -1,9 +1,11 @@
 {
-  "friends": [
+  "Friends": [
     {
-      "name": "dengzii",
-      "url": "dengzii.com",
-      "avatar": "dengzii.com/avatar.png"
+      "Name": "dengzii",
+      "Url": "dengzii.com",
+      "Avatar": "dengzii.com/avatar.png",
+      "Email": "email@example.com",
+      "Description": "a coder"
     }
   ]
 }

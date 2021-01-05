@@ -2,7 +2,10 @@ package gen
 
 import (
 	"bufio"
+	"crypto/md5"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -42,7 +45,7 @@ func init() {
 	typeNameMap["*.md"] = typeArticle
 	typeNameMap["*.html"] = typeArticle
 	typeNameMap["friends.json"] = typeFriends
-	typeNameMap["site-info.md"] = typeSiteInfo
+	typeNameMap["site-info.json"] = typeSiteInfo
 	typeNameMap["description.md"] = typeDescription
 
 	for i, ele := range excludeFiles {
@@ -59,19 +62,19 @@ type siteFile struct {
 	modTime  time.Time
 }
 
-func (that *siteFile) read() (error, string) {
+func (that *siteFile) read() ([]byte, error) {
 
 	s, err := os.Stat(that.path)
 	if err != nil {
-		return err, ""
+		return nil, err
 	}
 	if s.IsDir() {
-		return errors.New("cannot read directory"), ""
+		return nil, errors.New("cannot read directory")
 	}
 
 	f, err := os.Open(that.path)
 	if err != nil {
-		return err, ""
+		return nil, err
 	}
 	if f != nil {
 		defer func() {
@@ -80,19 +83,64 @@ func (that *siteFile) read() (error, string) {
 		}()
 	}
 
-	b := ""
+	var b []byte
 	bfRd := bufio.NewReader(f)
 
 	for {
 		line, err := bfRd.ReadBytes('\n')
-		b += string(line)
+		b = append(b, line...)
 		if err != nil {
 			if err == io.EOF {
-				return nil, b
+				return b, nil
 			}
-			return err, b
+			return b, err
 		}
 	}
+}
+
+func (that *siteFile) readString() (string, error) {
+
+	bytes, err := that.read()
+
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func (that *siteFile) readJson(v interface{}) error {
+
+	s, err := that.read()
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(s, &v)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (that *siteFile) md5() (string, error) {
+
+	f, err := os.Open(that.path)
+	if err != nil {
+		return "", err
+	}
+	if f == nil {
+		return "", errors.New("file is nil")
+	}
+
+	md5h := md5.New()
+	_, err = io.Copy(md5h, f)
+
+	if err != nil {
+		return "", err
+	}
+	md5s := fmt.Sprintf("%x", md5h.Sum([]byte("")))
+
+	return md5s, nil
 }
 
 // Check and parse specified dir to blogFile.
@@ -129,7 +177,7 @@ func parse(dirPath string) (bf *blogFile, err error) {
 			dirFile.fileType = typeCategory
 			categoryFile := categoryFile{
 				siteFile: &dirFile,
-				Article:  []articleFile{},
+				article:  []articleFile{},
 			}
 			categoryDir, e := ioutil.ReadDir(dirFile.path)
 			if e != nil {
@@ -141,7 +189,7 @@ func parse(dirPath string) (bf *blogFile, err error) {
 					continue
 				}
 				sf := toSiteFile(dirFile.path, fi)
-				categoryFile.Article = append(categoryFile.Article, articleFile{&sf})
+				categoryFile.article = append(categoryFile.article, articleFile{&sf})
 			}
 
 			bf.category = append(bf.category, categoryFile)
@@ -182,8 +230,28 @@ type friendsFile struct {
 	*siteFile
 }
 
+func (that *friendsFile) readFriends() ([]Friend, error) {
+
+	blog := Blog{}
+	err := that.readJson(&blog)
+	if err != nil {
+		return []Friend{}, err
+	}
+	return blog.Friends, nil
+}
+
 type siteInfoFile struct {
 	*siteFile
+}
+
+func (that siteInfoFile) readBlogInfo() (*BlogInfo, error) {
+
+	info := BlogInfo{}
+	err := that.readJson(&info)
+	if err != nil {
+		return nil, err
+	}
+	return &info, nil
 }
 
 type descriptionFile struct {
@@ -196,7 +264,7 @@ type articleFile struct {
 
 type categoryFile struct {
 	*siteFile
-	Article []articleFile
+	article []articleFile
 }
 
 func contains(slice []string, item ...string) bool {

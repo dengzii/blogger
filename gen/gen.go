@@ -14,23 +14,67 @@ type Friend struct {
 }
 
 type Blog struct {
-	Category []string
-	Articles []Article
-	Editing  []Article
-	Friend   Friend
+	Category    map[string][]Article
+	Friends     []Friend
+	Description string
+	Info        *BlogInfo
+}
+
+type BlogInfo struct {
+	Title       string
+	Description string
+	Favicon     string
+	Bio         string
 }
 
 type Article struct {
 	Title        string
 	LatestUpdate time.Time
 	Category     string
+
+	file *articleFile
 }
 
-func From(dir string) {
+func From(dir string) *Blog {
 
-	_, err := parse(dir)
+	bf, err := parse(dir)
 	if err != nil {
 		logger.Err("gen.from", err)
 	}
 
+	categoryArticles := map[string][]Article{}
+
+	for _, cate := range bf.category {
+
+		var articles []Article
+		for _, file := range cate.article {
+			articles = append(articles, Article{
+				Title:        file.name,
+				LatestUpdate: file.modTime,
+				Category:     cate.name,
+				file:         &file,
+			})
+		}
+		categoryArticles[cate.name] = articles
+	}
+
+	desc, err := bf.description.readString()
+	if err != nil {
+		return nil
+	}
+	blogInfo, err := bf.siteInfo.readBlogInfo()
+	if err != nil {
+		return nil
+	}
+	friends, err := bf.friend.readFriends()
+	if err != nil {
+		return nil
+	}
+
+	return &Blog{
+		Category:    categoryArticles,
+		Friends:     friends,
+		Description: desc,
+		Info:        blogInfo,
+	}
 }

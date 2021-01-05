@@ -1,41 +1,67 @@
 package gen
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestParse(test *testing.T) {
+func TestParse(t *testing.T) {
 
 	blogFile, err := parse("..\\sample_repo")
 
-	if err != nil {
-		test.Fatal(err)
-	}
+	assert.Nil(t, err)
+	assert.NotEmpty(t, blogFile.path)
 
-	test.Log(blogFile.path)
-	for _, file := range blogFile.category {
-		test.Log("name=", file.name, "path=", file.path, len(file.Article))
-	}
+	assert.NotEmpty(t, blogFile.category)
 }
 
 func TestParseNotExist(t *testing.T) {
 
 	_, err := parse("..\\not_exist")
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NotNil(t, err)
 }
 
 func TestParseReadFile(t *testing.T) {
 
 	blogFile, err := parse("..\\sample_repo")
 
-	if err != nil {
-		t.Fatal(err)
+	assert.Nil(t, err)
+
+	content, err := blogFile.friend.read()
+
+	assert.Nil(t, err)
+	assert.NotEmpty(t, content)
+}
+
+func TestFileMd5(t *testing.T) {
+
+	blogFile, _ := parse("..\\sample_repo")
+	s, err := blogFile.category[0].article[0].md5()
+
+	assert.Nil(t, err)
+	assert.Len(t, s, 32)
+}
+
+func TestFileReadBlogInfo(t *testing.T) {
+
+	blogFile, _ := parse("..\\sample_repo")
+	if blogFile.validate() != nil {
+		t.Log("err")
 	}
+	bi, err := blogFile.siteInfo.readBlogInfo()
 
-	err, content := blogFile.friend.read()
+	assert.Nil(t, err)
+	assert.NotNil(t, bi)
+}
 
-	t.Log(content)
+func TestFrom(t *testing.T) {
+
+	b := From("..\\sample_repo")
+
+	assert.NotNil(t, b)
+	assert.NotEmpty(t, b.Description)
+	assert.NotNil(t, b.Info)
+	assert.NotEmpty(t, b.Category)
+	assert.NotEmpty(t, b.Friends)
 }
