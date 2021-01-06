@@ -32,6 +32,7 @@ type Article struct {
 	Title        string
 	LatestUpdate time.Time
 	Category     string
+	FirstSection string
 
 	file *articleFile
 }
@@ -50,10 +51,15 @@ func From(dir string) *Blog {
 
 		var articles []Article
 		for _, file := range cate.article {
+			firstSec, err := file.readFirstSection()
+			if err != nil {
+				firstSec = []byte{}
+			}
 			articles = append(articles, Article{
 				Title:        file.name,
 				LatestUpdate: file.modTime,
 				Category:     cate.name,
+				FirstSection: string(firstSec),
 				file:         &file,
 			})
 		}

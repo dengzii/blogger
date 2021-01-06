@@ -62,16 +62,22 @@ type siteFile struct {
 	modTime  time.Time
 }
 
-func (that *siteFile) read() ([]byte, error) {
-
+func (that *siteFile) validate() error {
 	s, err := os.Stat(that.path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if s.IsDir() {
-		return nil, errors.New("cannot read directory")
+		return errors.New("cannot read directory")
 	}
+	return nil
+}
 
+func (that *siteFile) read() ([]byte, error) {
+
+	if err := that.validate(); err != nil {
+		return nil, err
+	}
 	f, err := os.Open(that.path)
 	if err != nil {
 		return nil, err
@@ -260,6 +266,44 @@ type descriptionFile struct {
 
 type articleFile struct {
 	*siteFile
+}
+
+func (that articleFile) readFirstSection() ([]byte, error) {
+
+	if err := that.validate(); err != nil {
+		return nil, err
+	}
+
+	f, err := os.Open(that.path)
+	if err != nil {
+		return nil, err
+	}
+	if f != nil {
+		defer func() {
+			err = f.Close()
+			return
+		}()
+	}
+
+	var b []byte
+	bfRd := bufio.NewReader(f)
+
+	for {
+		line, err := bfRd.ReadBytes('\n')
+		if len(line) <= 2 {
+			lineStr := string(line)
+			if lineStr == "\r\n" || lineStr == "\n" {
+				return b, nil
+			}
+		}
+		b = append(b, line...)
+		if err != nil {
+			if err == io.EOF {
+				return b, nil
+			}
+			return b, err
+		}
+	}
 }
 
 type categoryFile struct {

@@ -34,6 +34,19 @@ func TestParseReadFile(t *testing.T) {
 	assert.NotEmpty(t, content)
 }
 
+func TestReadFirstSection(t *testing.T) {
+
+	blogFile, err := parse("..\\sample_repo")
+	assert.NotNil(t, blogFile, err)
+
+	art := blogFile.category[0].article[0]
+	firstSec, err := art.readFirstSection()
+	all, err := art.read()
+
+	assert.NotEmpty(t, firstSec, all)
+	assert.NotEqual(t, all, firstSec)
+}
+
 func TestFileMd5(t *testing.T) {
 
 	blogFile, _ := parse("..\\sample_repo")
