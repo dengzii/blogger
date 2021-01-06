@@ -62,6 +62,9 @@ func TestFrom(t *testing.T) {
 	assert.NotNil(t, b)
 	assert.NotEmpty(t, b.Description)
 	assert.NotNil(t, b.Info)
-	assert.NotEmpty(t, b.Category)
+	assert.NotEmpty(t, b.CategoryArticleMap)
 	assert.NotEmpty(t, b.Friends)
+	assert.NotEmpty(t, b.CategoryArticleMap)
+	assert.Len(t, b.CategoryArticleMap, 3)
+	assert.NotEmpty(t, b.Category)
 }

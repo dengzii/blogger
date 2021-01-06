@@ -14,10 +14,11 @@ type Friend struct {
 }
 
 type Blog struct {
-	Category    map[string][]Article
-	Friends     []Friend
-	Description string
-	Info        *BlogInfo
+	CategoryArticleMap map[string][]Article
+	Category           []string
+	Friends            []Friend
+	Description        string
+	Info               *BlogInfo
 }
 
 type BlogInfo struct {
@@ -43,6 +44,7 @@ func From(dir string) *Blog {
 	}
 
 	categoryArticles := map[string][]Article{}
+	var category []string
 
 	for _, cate := range bf.category {
 
@@ -55,6 +57,7 @@ func From(dir string) *Blog {
 				file:         &file,
 			})
 		}
+		category = append(category, cate.name)
 		categoryArticles[cate.name] = articles
 	}
 
@@ -72,9 +75,10 @@ func From(dir string) *Blog {
 	}
 
 	return &Blog{
-		Category:    categoryArticles,
-		Friends:     friends,
-		Description: desc,
-		Info:        blogInfo,
+		CategoryArticleMap: categoryArticles,
+		Category:           category,
+		Friends:            friends,
+		Description:        desc,
+		Info:               blogInfo,
 	}
 }
