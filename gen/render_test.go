@@ -6,7 +6,7 @@ import (
 
 func TestIndexTemplate_execute(t *testing.T) {
 	type fields struct {
-		Template *Template
+		Template *BlogTemplate
 	}
 	type args struct {
 		variables  interface{}
@@ -21,8 +21,8 @@ func TestIndexTemplate_execute(t *testing.T) {
 		{
 			name: "\\",
 			fields: fields{
-				Template: &Template{
-					Path:      "..\\template\\template_index.html",
+				Template: &BlogTemplate{
+					Name:      "template_index",
 					Variables: nil,
 				},
 			},
@@ -35,14 +35,14 @@ func TestIndexTemplate_execute(t *testing.T) {
 		{
 			name: "OutputNotExist",
 			fields: fields{
-				Template: &Template{
-					Path:      "..\\template\\template_index.html",
+				Template: &BlogTemplate{
+					Name:      "template_index",
 					Variables: nil,
 				},
 			},
 			args: args{
 				variables:  From("..\\sample_repo"),
-				outputPath: "..\\out\\index.html",
+				outputPath: "..\\out\\",
 			},
 			wantErr: true,
 		},
@@ -50,10 +50,10 @@ func TestIndexTemplate_execute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			that := IndexTemplate{
-				Template: tt.fields.Template,
+				BlogTemplate: tt.fields.Template,
 			}
-			if err := that.execute(tt.args.variables, tt.args.outputPath); (err != nil) != tt.wantErr {
-				t.Errorf("execute() error = %v, wantErr %v", err, tt.wantErr)
+			if err := that.Render(tt.args.variables, tt.args.outputPath); (err != nil) != tt.wantErr {
+				t.Errorf("Render() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -94,6 +94,37 @@ func TestConvertConfig_validate(t *testing.T) {
 			}
 			if err := that.validate(); (err != nil) != tt.wantErr {
 				t.Errorf("validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestConvert(t *testing.T) {
+	type args struct {
+		blog   *Blog
+		config ConvertConfig
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "\\",
+			args: args{
+				blog: From("..\\sample_repo"),
+				config: ConvertConfig{
+					OutputDir:   "..\\out",
+					TemplateDir: "..\\template",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Render(tt.args.blog, tt.args.config); (err != nil) != tt.wantErr {
+				t.Errorf("Render() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

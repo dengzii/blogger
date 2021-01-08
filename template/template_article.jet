@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Title }}</title>
+</head>
+<body>
+<h2>{{ .Title }}</h2>
+<small>{{ .Category }}</small>
+<small>{{ .UpdatedAt }}</small>
+<pre>
+{{ .Content }}
+</pre>
+</body>
+</html>

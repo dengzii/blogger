@@ -11,8 +11,10 @@ func TestParse(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.NotEmpty(t, blogFile.path)
-
 	assert.NotEmpty(t, blogFile.category)
+
+	assert.Len(t, blogFile.category, 3)
+	assert.Len(t, blogFile.category[0].article, 1)
 }
 
 func TestParseNotExist(t *testing.T) {
@@ -66,18 +68,4 @@ func TestFileReadBlogInfo(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.NotNil(t, bi)
-}
-
-func TestFrom(t *testing.T) {
-
-	b := From("..\\sample_repo")
-
-	assert.NotNil(t, b)
-	assert.NotEmpty(t, b.Description)
-	assert.NotNil(t, b.Info)
-	assert.NotEmpty(t, b.CategoryArticleMap)
-	assert.NotEmpty(t, b.Friends)
-	assert.NotEmpty(t, b.CategoryArticleMap)
-	assert.Len(t, b.CategoryArticleMap, 3)
-	assert.NotEmpty(t, b.Category)
 }

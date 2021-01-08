@@ -47,7 +47,7 @@ func New(url string, accessToken string, gitDir string) UniversalRepo {
 		Url:           url,
 		GitDir:        gitDir,
 		DefaultBranch: "master",
-		out:           nil, //os.Stdout,
+		out:           os.Stdout,
 		auth:          auth,
 	}
 }

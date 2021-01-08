@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"blogger/logger"
 	"bufio"
 	"crypto/md5"
 	"encoding/json"
@@ -56,10 +57,11 @@ func init() {
 }
 
 type siteFile struct {
-	name     string
-	fileType int
-	path     string
-	modTime  time.Time
+	name       string
+	fileType   int
+	path       string
+	modTime    time.Time
+	createTime time.Time
 }
 
 func (that *siteFile) validate() error {
@@ -107,7 +109,7 @@ func (that *siteFile) read() ([]byte, error) {
 func (that *siteFile) readString() (string, error) {
 
 	bytes, err := that.read()
-
+	logger.D("readString", string(bytes))
 	if err != nil {
 		return "", err
 	}
@@ -181,24 +183,31 @@ func parse(dirPath string) (bf *blogFile, err error) {
 		if fileInfo.IsDir() {
 			dirFile := toSiteFile(dirPath, fileInfo)
 			dirFile.fileType = typeCategory
-			categoryFile := categoryFile{
-				siteFile: &dirFile,
-				article:  []articleFile{},
+			cateFile := categoryFile{
+				siteFile:        &dirFile,
+				article:         []articleFile{},
+				alternativeName: dirFile.name,
 			}
-			categoryDir, e := ioutil.ReadDir(dirFile.path)
+			articleFileInfos, e := ioutil.ReadDir(dirFile.path)
 			if e != nil {
 				err = e
 				return
 			}
-			for _, fi := range categoryDir {
+
+			cateArticles := make([]articleFile, 0)
+			for _, fi := range articleFileInfos {
 				if skipFile(fi) {
 					continue
 				}
-				sf := toSiteFile(dirFile.path, fi)
-				categoryFile.article = append(categoryFile.article, articleFile{&sf})
-			}
+				aSiteFile := toSiteFile(dirFile.path, fi)
 
-			bf.category = append(bf.category, categoryFile)
+				cateArticles = append(cateArticles, articleFile{
+					alternativeName: aSiteFile.name[:strings.LastIndex(aSiteFile.name, ".")],
+					siteFile:        &aSiteFile,
+				})
+			}
+			cateFile.article = cateArticles
+			bf.category = append(bf.category, cateFile)
 		} else {
 			f := toSiteFile(dirPath, fileInfo)
 			switch f.fileType {
@@ -265,6 +274,7 @@ type descriptionFile struct {
 }
 
 type articleFile struct {
+	alternativeName string
 	*siteFile
 }
 
@@ -308,7 +318,8 @@ func (that articleFile) readFirstSection() ([]byte, error) {
 
 type categoryFile struct {
 	*siteFile
-	article []articleFile
+	article         []articleFile
+	alternativeName string
 }
 
 func contains(slice []string, item ...string) bool {
