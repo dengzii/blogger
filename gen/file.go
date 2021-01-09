@@ -245,12 +245,12 @@ type friendsFile struct {
 	*siteFile
 }
 
-func (that *friendsFile) readFriends() ([]Friend, error) {
+func (that *friendsFile) readFriends() ([]*Friend, error) {
 
 	blog := Blog{}
 	err := that.readJson(&blog)
 	if err != nil {
-		return []Friend{}, err
+		return []*Friend{}, err
 	}
 	return blog.Friends, nil
 }

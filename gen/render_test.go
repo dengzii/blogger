@@ -88,7 +88,7 @@ func TestConvertConfig_validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			that := &ConvertConfig{
+			that := &RenderConfig{
 				OutputDir:   tt.fields.OutputDir,
 				TemplateDir: tt.fields.TemplateDir,
 			}
@@ -102,7 +102,7 @@ func TestConvertConfig_validate(t *testing.T) {
 func TestConvert(t *testing.T) {
 	type args struct {
 		blog   *Blog
-		config ConvertConfig
+		config RenderConfig
 	}
 	tests := []struct {
 		name    string
@@ -113,7 +113,7 @@ func TestConvert(t *testing.T) {
 			name: "\\",
 			args: args{
 				blog: From("..\\sample_repo"),
-				config: ConvertConfig{
+				config: RenderConfig{
 					OutputDir:   "..\\out",
 					TemplateDir: "..\\template",
 				},

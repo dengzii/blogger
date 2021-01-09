@@ -14,13 +14,22 @@ type Friend struct {
 	Description string
 }
 
+type Category struct {
+	Name            string
+	AlternativeName string
+	Articles        []*Article
+}
+
+type About struct {
+	Content string
+	file    *descriptionFile
+}
+
 type Blog struct {
-	CategoryArticleMap      map[string][]Article
-	Category                []string
-	CategoryAlternativeName []string
-	Friends                 []Friend
-	Description             string
-	Info                    *BlogInfo
+	Category    []*Category
+	Friends     []*Friend
+	Description *About
+	Info        *BlogInfo
 }
 
 type BlogInfo struct {
@@ -34,7 +43,7 @@ type Article struct {
 	Title                   string
 	UpdatedAt               string
 	CreatedAt               string
-	Category                string
+	Category                *Category
 	FirstSection            string
 	AlternativeName         string
 	AlternativeCategoryName string
@@ -55,7 +64,7 @@ func (that *Article) ReadContent() string {
 func (that *Article) String() string {
 	return fmt.Sprintf(
 		"Article{Title=%s, UpdatedAt=%s, Category=%s, AlternativeName=%s, AlternativeCategoryName=%s}",
-		that.Title, that.UpdatedAt, that.Category, that.AlternativeName, that.AlternativeCategoryName,
+		that.Title, that.UpdatedAt, that.Category.Name, that.AlternativeName, that.AlternativeCategoryName,
 	)
 }
 
@@ -66,13 +75,17 @@ func From(dir string) *Blog {
 		logger.Err("gen.from", err)
 	}
 
-	categoryArticles := map[string][]Article{}
-	var category []string
-	var categoryAlternativeName []string
+	var categories []*Category
 
 	for _, cate := range bf.category {
 
-		var articles []Article
+		var articles []*Article
+		category := &Category{
+			Name:            cate.name,
+			AlternativeName: cate.alternativeName,
+			Articles:        articles,
+		}
+
 		for _, aFile := range cate.article {
 			var firstSec string
 			if strings.HasSuffix(aFile.name, ".html") {
@@ -82,28 +95,33 @@ func From(dir string) *Blog {
 				if err == nil {
 					firstSec = string(fSec)
 				}
+				firstSec = strings.TrimRight(firstSec, "\r\n")
+				firstSec = strings.TrimRight(firstSec, "\n")
 			}
 			articleName := aFile.name[:strings.LastIndex(aFile.name, ".")]
-			articles = append(articles, Article{
+			articles = append(articles, &Article{
 				Title:                   articleName,
 				UpdatedAt:               aFile.modTime.Format("2006-01-02"),
 				CreatedAt:               aFile.createTime.Format("2006-01-02"),
-				Category:                cate.name,
+				Category:                category,
 				AlternativeCategoryName: cate.alternativeName,
 				AlternativeName:         aFile.alternativeName,
 				FirstSection:            firstSec,
 				file:                    &aFile,
 			})
 		}
-		category = append(category, cate.name)
-		categoryAlternativeName = append(categoryAlternativeName, cate.alternativeName)
-		categoryArticles[cate.name] = articles
+		category.Articles = articles
+		categories = append(categories, category)
 	}
 
+	if err != nil {
+		return nil
+	}
 	desc, err := bf.description.readString()
 	if err != nil {
 		return nil
 	}
+
 	blogInfo, err := bf.siteInfo.readBlogInfo()
 	if err != nil {
 		return nil
@@ -114,11 +132,9 @@ func From(dir string) *Blog {
 	}
 
 	return &Blog{
-		CategoryArticleMap:      categoryArticles,
-		Category:                category,
-		CategoryAlternativeName: categoryAlternativeName,
-		Friends:                 friends,
-		Description:             desc,
-		Info:                    blogInfo,
+		Category:    categories,
+		Friends:     friends,
+		Description: &About{file: bf.description, Content: desc},
+		Info:        blogInfo,
 	}
 }

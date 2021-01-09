@@ -1,0 +1,133 @@
+body {
+    padding: 0;
+    margin: 0;
+    min-width: 100%;
+    min-height: 100%;
+    background-color: #fafffe;
+}
+
+a {
+    color: #00BCD4;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #8BC34A;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.header {
+    padding: 32px;
+    background-color: #232323;
+}
+
+.header > h1 {
+    text-transform: uppercase;
+}
+
+.header > ul > li {
+    float: left;
+    margin-right: 32px;
+}
+
+.header > ul {
+    display: inline-block;
+}
+
+.header > .bio {
+    color: #c0cdcd;
+    text-transform: capitalize;
+}
+
+.post {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.post-created-at {
+    line-height: 22px;
+}
+
+.post-title {
+    display: inline-block;
+    min-width: 300px;
+}
+
+.post-content {
+    display: none;
+}
+
+.friend {
+    margin: 32px;
+    height: 64px;
+}
+
+.friend-avatar {
+    display: inline-block;
+    float: left;
+    width: 64px;
+    height: 64px;
+    border-radius: 6px;
+    background-color: #c7c7c7;
+}
+
+.friend-avatar > img {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    margin: 2px;
+}
+
+.friend-info {
+    display: inline-block;
+    margin: 8px 32px;
+}
+
+.friend-info > a {
+    display: block;
+    line-height: 22px;
+}
+
+.friend-info > small {
+    display: block;
+}
+
+.about {
+    margin: 16px;
+}
+
+.article-content {
+    max-width: 1000px;
+}
+
+.article-info {
+    line-height: 24px;
+}
+
+.article-info > span {
+    color: #aaa;
+}
+
+.article-content > p, .article-content > ul > li {
+    color: #333;
+    line-height: 26px;
+    word-break: break-word;
+}
+
+code, pre, blockquote {
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.main {
+    margin: 32px;
+    min-height: 100%;
+}
+
+
+

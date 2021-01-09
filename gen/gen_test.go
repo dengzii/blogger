@@ -27,19 +27,17 @@ func TestFrom(t *testing.T) {
 			assert.NotNil(t, b)
 			assert.NotEmpty(t, b.Description)
 			assert.NotNil(t, b.Info)
-			assert.NotEmpty(t, b.CategoryArticleMap)
 			assert.NotEmpty(t, b.Friends)
-			assert.NotEmpty(t, b.CategoryArticleMap)
-			assert.Len(t, b.CategoryArticleMap, 3)
+			assert.NotEmpty(t, b.Category)
+			assert.Len(t, b.Category, 3)
 			assert.NotEmpty(t, b.Category)
 
 			for _, s := range b.Category {
-				t.Log(s)
-				for _, article := range b.CategoryArticleMap[s] {
+				t.Log(s.Name)
+				for _, article := range s.Articles {
 					t.Log(article.String())
 				}
 			}
-			assert.Len(t, b.CategoryArticleMap[b.Category[0]], 1)
 		})
 	}
 }

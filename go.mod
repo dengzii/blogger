@@ -8,5 +8,8 @@ require (
 	github.com/CloudyKit/jet v2.1.2+incompatible
 	github.com/go-git/go-billy/v5 v5.0.0
 	github.com/go-git/go-git/v5 v5.2.0
+	github.com/russross/blackfriday v1.6.0
+	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/stretchr/testify v1.4.0
+	github.com/yuin/goldmark v1.3.1
 )

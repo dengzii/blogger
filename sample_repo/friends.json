@@ -2,10 +2,31 @@
   "Friends": [
     {
       "Name": "dengzii",
-      "Url": "dengzii.com",
-      "Avatar": "dengzii.com/avatar.png",
+      "Url": "http://dengzii.com",
+      "Avatar": "http://b.dengzii.com/static/img/pic.png",
       "Email": "email@example.com",
-      "Description": "a coder"
+      "Description": "a coder."
+    },
+    {
+      "Name": "dengzii",
+      "Url": "http://dengzii.com",
+      "Avatar": "http://b.dengzii.com/static/img/pic.png",
+      "Email": "email@example.com",
+      "Description": "a coder."
+    },
+    {
+      "Name": "dengzii",
+      "Url": "http://dengzii.com",
+      "Avatar": "http://b.dengzii.com/static/img/pic.png",
+      "Email": "email@example.com",
+      "Description": "a coder."
+    },
+    {
+      "Name": "dengzii",
+      "Url": "http://dengzii.com",
+      "Avatar": "http://b.dengzii.com/static/img/pic.png",
+      "Email": "email@example.com",
+      "Description": "a coder."
     }
   ]
 }

@@ -14,19 +14,20 @@
     {{ yield header() }}
     <div class="main">
         <ul>
-            {{ range article := .Articles }}
-            <li>
-                <div class="post">
-                    <span class="post-created-at">{{ article.UpdatedAt }}</span>
-                    <span class="post-category">{{ article.Category.Name }}</span>
-                    <a class="post-title"
-                       href="./{{ article.Category.Name }}/{{ article.AlternativeName }}.html">{{ article.Title }}</a>
-                    <br>
-                    <small class="post-content">{{ article.FirstSection }}</small>
+            {{ range friend := .Friends }}
+            <li class="friend">
+                <div>
+                    <div class="friend-avatar">
+                        <img src="{{ friend.Avatar }}" alt="avatar">
+                    </div>
+                    <div class="friend-info">
+                            <a class="friend-name" href="{{ friend.Url }}" target="_blank">{{ friend.Name }}</a>
+                            <small>{{ friend.Description }}</small>
+                    </div>
                 </div>
             </li>
             {{ else }}
-            <li>No data</li>
+            <li>No friends yet.</li>
             {{ end }}
         </ul>
     </div>
