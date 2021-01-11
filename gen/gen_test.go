@@ -22,7 +22,10 @@ func TestFrom(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := From(tt.args.dir)
+			b := From(tt.args.dir, &RenderConfig{
+				OutputDir:   "..\\out",
+				TemplateDir: "..\\template",
+			})
 
 			assert.NotNil(t, b)
 			assert.NotEmpty(t, b.Description)
@@ -33,10 +36,11 @@ func TestFrom(t *testing.T) {
 			assert.NotEmpty(t, b.Category)
 
 			for _, s := range b.Category {
-				t.Log(s.Name)
-				for _, article := range s.Articles {
-					t.Log(article.String())
-				}
+				//t.Log(s.Name)
+				//for _, article := range s.Articles {
+				//	t.Log(article.String())
+				//}
+				assert.NotNil(t, s)
 			}
 		})
 	}

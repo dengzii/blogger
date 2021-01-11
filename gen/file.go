@@ -1,7 +1,6 @@
 package gen
 
 import (
-	"blogger/logger"
 	"bufio"
 	"crypto/md5"
 	"encoding/json"
@@ -10,19 +9,21 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 )
 
 // expressions file type
 const (
-	typeArticle     = 1
-	typeFriends     = 2
-	typeSiteInfo    = 3
-	typeDescription = 4
-	typeDir         = 5
-	typeCategory    = 6
-	typeUnknown     = -1
+	typeArticle  = 1
+	typeFriends  = 2
+	typeSiteInfo = 3
+	typeAboutMe  = 4
+	typeDir      = 5
+	typeCategory = 6
+	typeIgnore   = 7
+	typeUnknown  = -1
 )
 
 const pathSep = string(os.PathSeparator)
@@ -36,18 +37,25 @@ var includeFiles = []string{
 
 // specify the exclude files
 var excludeFiles = []string{
-	pathSep + ".git",
+	pathSep + ".git" + pathSep,
 }
 
 // the pair of string file name and int type
-var typeNameMap = map[string]int{}
+var fileNameTypeMap = map[string]int{}
+
+var typeFileNameMap = map[int]string{}
 
 func init() {
-	typeNameMap["*.md"] = typeArticle
-	typeNameMap["*.html"] = typeArticle
-	typeNameMap["friends.json"] = typeFriends
-	typeNameMap["site-info.json"] = typeSiteInfo
-	typeNameMap["description.md"] = typeDescription
+	fileNameTypeMap["*.md"] = typeArticle
+	fileNameTypeMap["*.html"] = typeArticle
+	fileNameTypeMap["friends.json"] = typeFriends
+	fileNameTypeMap["site-info.json"] = typeSiteInfo
+	fileNameTypeMap["about-me.md"] = typeAboutMe
+	fileNameTypeMap[".ignore"] = typeIgnore
+
+	for name, t := range fileNameTypeMap {
+		typeFileNameMap[t] = name
+	}
 
 	for i, ele := range excludeFiles {
 		s := strings.ReplaceAll(ele, "/", pathSep)
@@ -109,7 +117,6 @@ func (that *siteFile) read() ([]byte, error) {
 func (that *siteFile) readString() (string, error) {
 
 	bytes, err := that.read()
-	logger.D("readString", string(bytes))
 	if err != nil {
 		return "", err
 	}
@@ -151,27 +158,52 @@ func (that *siteFile) md5() (string, error) {
 	return md5s, nil
 }
 
-// Check and parse specified dir to blogFile.
-func parse(dirPath string) (bf *blogFile, err error) {
+type fileLog struct {
+	logs map[string]logDetail
+}
 
-	dirPath = strings.TrimRight(dirPath, pathSep)
-	i, e := os.Stat(dirPath)
+type logDetail struct {
+	path      string
+	md5       string
+	createdAt time.Time
+	ModifyAt  time.Time
+}
+
+// Check and parse specified dir to blogFile.
+func parse(sourceDir string) (bf *blogFile, err error) {
+
+	sourceDir = strings.TrimRight(sourceDir, pathSep)
+	i, e := os.Stat(sourceDir)
 
 	if e != nil {
 		return nil, e
 	}
 
-	sf := toSiteFile(strings.TrimRight(dirPath, i.Name()), i)
+	sf := toSiteFile(strings.TrimRight(sourceDir, i.Name()), i)
 	bf = &blogFile{
 		siteFile: &sf,
 		category: []categoryFile{},
 	}
 
 	err = nil
-	dir, e := ioutil.ReadDir(dirPath)
+	dir, e := ioutil.ReadDir(sourceDir)
 	if e != nil {
 		err = e
 		return
+	}
+
+	ignoreFileInfo, err := os.Stat(sourceDir + pathSep + typeFileNameMap[typeIgnore])
+	if err == nil {
+		ignoreFile := toSiteFile(sourceDir, ignoreFileInfo)
+		bf.ignore = &ignoreFile
+		igStr, err := bf.ignore.readString()
+		if err == nil {
+			lines := strings.Split(igStr, "\r\n")
+			for _, line := range lines {
+				line = strings.ReplaceAll(line, "/", pathSep)
+				excludeFiles = append(excludeFiles, strings.TrimSpace(line))
+			}
+		}
 	}
 
 	for _, fileInfo := range dir {
@@ -181,7 +213,7 @@ func parse(dirPath string) (bf *blogFile, err error) {
 		}
 
 		if fileInfo.IsDir() {
-			dirFile := toSiteFile(dirPath, fileInfo)
+			dirFile := toSiteFile(sourceDir, fileInfo)
 			dirFile.fileType = typeCategory
 			cateFile := categoryFile{
 				siteFile:        &dirFile,
@@ -209,11 +241,11 @@ func parse(dirPath string) (bf *blogFile, err error) {
 			cateFile.article = cateArticles
 			bf.category = append(bf.category, cateFile)
 		} else {
-			f := toSiteFile(dirPath, fileInfo)
+			f := toSiteFile(sourceDir, fileInfo)
 			switch f.fileType {
 			case typeArticle:
 				// ignore root
-			case typeDescription:
+			case typeAboutMe:
 				bf.description = &descriptionFile{&f}
 			case typeSiteInfo:
 				bf.siteInfo = &siteInfoFile{&f}
@@ -230,6 +262,7 @@ type blogFile struct {
 	friend      *friendsFile
 	siteInfo    *siteInfoFile
 	description *descriptionFile
+	ignore      *siteFile
 	category    []categoryFile
 	*siteFile
 }
@@ -341,8 +374,21 @@ func skipFile(fileInfo os.FileInfo) bool {
 	}
 
 	// check exclude files
-	if contains(excludeFiles, pathSep+fileInfo.Name(), fileInfo.Name()) {
-		return true
+	if fileInfo.IsDir() {
+		if contains(excludeFiles, pathSep+fileInfo.Name()+pathSep) {
+			return true
+		}
+	} else {
+		suffixIndex := strings.LastIndex(fileInfo.Name(), ".")
+		if suffixIndex > -1 {
+			suffixPattern := "*" + fileInfo.Name()[suffixIndex:]
+			if contains(excludeFiles, suffixPattern) {
+				return true
+			}
+		}
+		if contains(excludeFiles, fileInfo.Name()) {
+			return true
+		}
 	}
 
 	// check include files
@@ -358,9 +404,9 @@ func skipFile(fileInfo os.FileInfo) bool {
 	return !fileInfo.IsDir()
 }
 
-func toSiteFile(dirPath string, info os.FileInfo) siteFile {
+func toSiteFile(parentDir string, info os.FileInfo) siteFile {
 
-	path := dirPath + pathSep + info.Name()
+	path := parentDir + pathSep + info.Name()
 	t := typeUnknown
 
 	suffixPattern := info.Name()
@@ -372,13 +418,13 @@ func toSiteFile(dirPath string, info os.FileInfo) siteFile {
 
 		t = typeDir
 
-	} else if typeNameMap[info.Name()] > 0 {
+	} else if fileNameTypeMap[info.Name()] > 0 {
 
-		t = typeNameMap[info.Name()]
+		t = fileNameTypeMap[info.Name()]
 
-	} else if typeNameMap[suffixPattern] > 0 {
+	} else if fileNameTypeMap[suffixPattern] > 0 {
 
-		t = typeNameMap[info.Name()]
+		t = fileNameTypeMap[info.Name()]
 	}
 
 	return siteFile{
@@ -387,4 +433,15 @@ func toSiteFile(dirPath string, info os.FileInfo) siteFile {
 		path:     path,
 		modTime:  info.ModTime(),
 	}
+}
+
+func getFileCreateTime(info os.FileInfo) time.Time {
+	osType := runtime.GOOS
+	switch osType {
+	case "windows":
+		getCreateTime(info)
+	case "linux":
+		getCreateTime(info)
+	}
+	return time.Now()
 }

@@ -3,6 +3,7 @@ package gen
 import (
 	"blogger/logger"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -33,10 +34,10 @@ type Blog struct {
 }
 
 type BlogInfo struct {
-	Title       string
-	Description string
-	Favicon     string
-	Bio         string
+	Title    string
+	Keywords string
+	Favicon  string
+	Bio      string
 }
 
 type Article struct {
@@ -68,7 +69,11 @@ func (that *Article) String() string {
 	)
 }
 
-func From(dir string) *Blog {
+func From(dir string, renderConfig *RenderConfig) *Blog {
+
+	if err := renderConfig.validate(); err != nil {
+		return nil
+	}
 
 	bf, err := parse(dir)
 	if err != nil {
@@ -87,48 +92,30 @@ func From(dir string) *Blog {
 		}
 
 		for _, aFile := range cate.article {
-			var firstSec string
-			if strings.HasSuffix(aFile.name, ".html") {
-				firstSec = ""
-			} else {
-				fSec, err := aFile.readFirstSection()
-				if err == nil {
-					firstSec = string(fSec)
-				}
-				firstSec = strings.TrimRight(firstSec, "\r\n")
-				firstSec = strings.TrimRight(firstSec, "\n")
-			}
-			articleName := aFile.name[:strings.LastIndex(aFile.name, ".")]
-			articles = append(articles, &Article{
-				Title:                   articleName,
-				UpdatedAt:               aFile.modTime.Format("2006-01-02"),
-				CreatedAt:               aFile.createTime.Format("2006-01-02"),
-				Category:                category,
-				AlternativeCategoryName: cate.alternativeName,
-				AlternativeName:         aFile.alternativeName,
-				FirstSection:            firstSec,
-				file:                    &aFile,
-			})
+			articles = append(articles, fileToArticle(aFile, renderConfig.OutputDir, category))
 		}
 		category.Articles = articles
 		categories = append(categories, category)
 	}
 
-	if err != nil {
-		return nil
-	}
-	desc, err := bf.description.readString()
-	if err != nil {
-		return nil
+	var desc string
+	if bf.description != nil {
+		desc, err = bf.description.readString()
+		if err != nil {
+			desc = ""
+		}
 	}
 
 	blogInfo, err := bf.siteInfo.readBlogInfo()
 	if err != nil {
 		return nil
 	}
-	friends, err := bf.friend.readFriends()
-	if err != nil {
-		return nil
+	var friends []*Friend
+	if bf.friend != nil {
+		friends, err = bf.friend.readFriends()
+		if err != nil {
+			friends = []*Friend{}
+		}
 	}
 
 	return &Blog{
@@ -136,5 +123,41 @@ func From(dir string) *Blog {
 		Friends:     friends,
 		Description: &About{file: bf.description, Content: desc},
 		Info:        blogInfo,
+	}
+}
+
+func fileToArticle(aFile articleFile, outDir string, category *Category) *Article {
+
+	var firstSec string
+	if strings.HasSuffix(aFile.name, ".html") {
+		firstSec = ""
+	} else {
+		fSec, err := aFile.readFirstSection()
+		if err == nil {
+			firstSec = string(fSec)
+		}
+		firstSec = strings.TrimRight(firstSec, "\r\n")
+		firstSec = strings.TrimRight(firstSec, "\n")
+	}
+	articleName := aFile.name[:strings.LastIndex(aFile.name, ".")]
+
+	out := outDir + category.AlternativeName + pathSep + aFile.alternativeName + ".html"
+	outInfo, err := os.Stat(out)
+
+	if err == nil {
+		aFile.createTime = getCreateTime(outInfo)
+	} else {
+		aFile.createTime = aFile.modTime
+	}
+
+	return &Article{
+		Title:                   articleName,
+		UpdatedAt:               aFile.modTime.Format("2006-01-02"),
+		CreatedAt:               aFile.createTime.Format("2006-01-02 15:04"),
+		Category:                category,
+		AlternativeCategoryName: category.AlternativeName,
+		AlternativeName:         aFile.alternativeName,
+		FirstSection:            firstSec,
+		file:                    &aFile,
 	}
 }

@@ -17,10 +17,10 @@
             {{ range article := .Articles }}
             <li>
                 <div class="post">
-                    <span class="post-created-at">{{ article.UpdatedAt }}</span>
-                    <span class="post-category">{{ article.Category.Name }}</span>
+                    <span class="post-created-at">{{ article.CreatedAt }}</span>
                     <a class="post-title"
-                       href="./{{ article.Category.Name }}/{{ article.AlternativeName }}.html">{{ article.Title }}</a>
+                       href="./{{ article.Category.Name }}/{{ article.AlternativeName }}.html">
+                        <span class="post-category">{{ article.Category.Name }} · </span>{{ article.Title }}</a>
                     <br>
                     <small class="post-content">{{ article.FirstSection }}</small>
                 </div>
@@ -30,9 +30,8 @@
             {{ end }}
         </ul>
     </div>
-    <div class="footer">
-        {{ yield footer() }}
-    </div>
+
+    {{ yield footer() }}
 </div>
 </body>
 </html>

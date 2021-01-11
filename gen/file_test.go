@@ -14,7 +14,6 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, blogFile.category)
 
 	assert.Len(t, blogFile.category, 3)
-	assert.Len(t, blogFile.category[0].article, 1)
 }
 
 func TestParseNotExist(t *testing.T) {

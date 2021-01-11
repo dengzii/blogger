@@ -40,28 +40,40 @@ func (that *BlogTemplate) Render(variables interface{}, outputPath string) error
 	if err := that.Init(); err != nil {
 		return err
 	}
-	outputInfo, err := os.Stat(outputPath)
+	outInfo, err := os.Stat(outputPath)
+	var fp *os.File
 	if err != nil {
-		if !os.IsNotExist(err) {
+		if os.IsNotExist(err) {
+			outputFileName := outputPath[strings.LastIndex(outputPath, string(os.PathSeparator))+1:]
+			err = os.MkdirAll(strings.TrimRight(outputPath, outputFileName), os.ModePerm)
+			if err != nil {
+				return err
+			}
+			fp, err = os.Create(outputPath)
+			if err != nil {
+				return err
+			}
+		} else {
 			return err
 		}
 	} else {
-		if outputInfo.IsDir() {
+		if outInfo.IsDir() {
 			return errors.New("outputPath must be a file: " + outputPath)
 		}
-		_ = os.Remove(outputPath)
+		err = os.Truncate(outputPath, 0)
+		if err != nil {
+			return err
+		}
+		fp, err = os.OpenFile(outputPath, os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
-	outputFileName := outputPath[strings.LastIndex(outputPath, string(os.PathSeparator))+1:]
-	_ = os.MkdirAll(strings.TrimRight(outputPath, outputFileName), os.ModePerm)
+	if err := that.Execute(fp, nil, variables); err != nil {
+		return err
+	}
 
-	out, err := os.OpenFile(outputPath, os.O_CREATE, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	if err := that.Execute(out, nil, variables); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -96,6 +108,14 @@ func (that *RenderConfig) validate() error {
 	}
 	if !inf.IsDir() {
 		return errors.New("the template dir must be a directory")
+	}
+
+	if !strings.HasSuffix(that.OutputDir, pathSep) {
+		that.OutputDir += pathSep
+	}
+
+	if !strings.HasSuffix(that.TemplateDir, pathSep) {
+		that.TemplateDir += pathSep
 	}
 
 	return nil

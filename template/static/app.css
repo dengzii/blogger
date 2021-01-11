@@ -4,6 +4,7 @@ body {
     min-width: 100%;
     min-height: 100%;
     background-color: #fafffe;
+    font-family: 'Merriweather Sans', "Microsoft YaHei UI", Verdana, Arial, "Lucida Console", sans-serif;
 }
 
 a {
@@ -15,6 +16,10 @@ a:hover {
     color: #8BC34A;
 }
 
+code {
+
+}
+
 ul {
     list-style: none;
     padding: 0;
@@ -24,10 +29,12 @@ ul {
 .header {
     padding: 32px;
     background-color: #232323;
+    min-height: 15vh;
 }
 
 .header > h1 {
     text-transform: uppercase;
+    font-weight: 40;
 }
 
 .header > ul > li {
@@ -51,6 +58,8 @@ ul {
 
 .post-created-at {
     line-height: 22px;
+    margin-right: 8px;
+    font-family: "Nirmala UI","Andale Mono",Arial, monospace;
 }
 
 .post-title {
@@ -58,12 +67,16 @@ ul {
     min-width: 300px;
 }
 
+.post-category{
+    color: #333;
+}
+
 .post-content {
     display: none;
 }
 
 .friend {
-    margin: 32px;
+    margin-bottom: 32px;
     height: 64px;
 }
 
@@ -113,6 +126,10 @@ ul {
     color: #aaa;
 }
 
+.article-title{
+
+}
+
 .article-content > p, .article-content > ul > li {
     color: #333;
     line-height: 26px;
@@ -126,8 +143,10 @@ code, pre, blockquote {
 
 .main {
     margin: 32px;
-    min-height: 100%;
+    min-height: 75vh;
 }
 
-
+.footer {
+    margin: 32px;
+}
 
