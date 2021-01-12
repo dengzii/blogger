@@ -12,4 +12,5 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/stretchr/testify v1.4.0
 	github.com/yuin/goldmark v1.3.1
+	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
 )

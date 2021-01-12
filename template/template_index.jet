@@ -6,6 +6,8 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8" content="text/html">
+    <meta name="keywords" content="{{ .Info.Keywords }}">
+    <meta name="description" content="{{ .Info.Desc }}"/>
     <title>{{ .Info.Title }}</title>
     {{ yield head() }}
 </head>
@@ -19,7 +21,7 @@
                 <div class="post">
                     <span class="post-created-at">{{ article.CreatedAt }}</span>
                     <a class="post-title"
-                       href="./{{ article.Category.Name }}/{{ article.AlternativeName }}.html">
+                       href="/{{ article.Category.AlternativeName }}/{{ article.AlternativeName }}.html">
                         <span class="post-category">{{ article.Category.Name }} · </span>{{ article.Title }}</a>
                     <br>
                     <small class="post-content">{{ article.FirstSection }}</small>

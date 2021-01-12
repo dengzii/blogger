@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"blogger/utils"
 	"bufio"
 	"crypto/md5"
 	"encoding/json"
@@ -158,17 +159,6 @@ func (that *siteFile) md5() (string, error) {
 	return md5s, nil
 }
 
-type fileLog struct {
-	logs map[string]logDetail
-}
-
-type logDetail struct {
-	path      string
-	md5       string
-	createdAt time.Time
-	ModifyAt  time.Time
-}
-
 // Check and parse specified dir to blogFile.
 func parse(sourceDir string) (bf *blogFile, err error) {
 
@@ -218,7 +208,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 			cateFile := categoryFile{
 				siteFile:        &dirFile,
 				article:         []articleFile{},
-				alternativeName: dirFile.name,
+				alternativeName: utils.Md5Str(dirFile.name)[:8],
 			}
 			articleFileInfos, e := ioutil.ReadDir(dirFile.path)
 			if e != nil {
@@ -234,7 +224,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 				aSiteFile := toSiteFile(dirFile.path, fi)
 
 				cateArticles = append(cateArticles, articleFile{
-					alternativeName: aSiteFile.name[:strings.LastIndex(aSiteFile.name, ".")],
+					alternativeName: utils.Md5Str(aSiteFile.name[:strings.LastIndex(aSiteFile.name, ".")])[:8],
 					siteFile:        &aSiteFile,
 				})
 			}

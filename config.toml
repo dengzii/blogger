@@ -1,10 +1,11 @@
 [Git]
 Repo = "https://github.com/dengzii/blog/"
 AccessToken = ""
+Dir = "./source"
 
 [Blog]
 Host = "0.0.0.0"
 Port = 8080
 Template = "./template"
-Site = "./www"
-AccessToken = "abcd"
+Dir = "./www"
+WebHookAccessToken = "abcd"

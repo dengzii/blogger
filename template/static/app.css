@@ -134,7 +134,8 @@ ul {
 }
 
 .article-title {
-
+    max-width: 1000px;
+    border-bottom: #999 solid 4px;
 }
 
 .article-content > p, .article-content > ul > li {

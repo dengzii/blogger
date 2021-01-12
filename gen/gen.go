@@ -2,6 +2,7 @@ package gen
 
 import (
 	"blogger/logger"
+	"blogger/utils"
 	"fmt"
 	"os"
 	"strings"
@@ -38,6 +39,7 @@ type BlogInfo struct {
 	Keywords string
 	Favicon  string
 	Bio      string
+	Desc     string
 }
 
 type Article struct {
@@ -69,15 +71,22 @@ func (that *Article) String() string {
 	)
 }
 
-func From(dir string, renderConfig *RenderConfig) *Blog {
+func From(dir string, renderConfig *RenderConfig) error {
 
 	if err := renderConfig.validate(); err != nil {
-		return nil
+		return err
+	}
+
+	staticSrc := renderConfig.TemplateDir + "static"
+	staticDst := renderConfig.OutputDir + "static"
+
+	if err := utils.CopyDir(staticSrc, staticDst); err != nil {
+		return err
 	}
 
 	bf, err := parse(dir)
 	if err != nil {
-		logger.Err("gen.from", err)
+		return err
 	}
 
 	var categories []*Category
@@ -108,7 +117,7 @@ func From(dir string, renderConfig *RenderConfig) *Blog {
 
 	blogInfo, err := bf.siteInfo.readBlogInfo()
 	if err != nil {
-		return nil
+		return err
 	}
 	var friends []*Friend
 	if bf.friend != nil {
@@ -118,12 +127,14 @@ func From(dir string, renderConfig *RenderConfig) *Blog {
 		}
 	}
 
-	return &Blog{
+	b := &Blog{
 		Category:    categories,
 		Friends:     friends,
 		Description: &About{file: bf.description, Content: desc},
 		Info:        blogInfo,
 	}
+	err = Render(b, renderConfig)
+	return nil
 }
 
 func fileToArticle(aFile articleFile, outDir string, category *Category) *Article {

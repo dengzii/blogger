@@ -106,37 +106,3 @@ func TestConvertConfig_validate(t *testing.T) {
 		})
 	}
 }
-
-func TestConvert(t *testing.T) {
-	type args struct {
-		blog   *Blog
-		config RenderConfig
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "\\",
-			args: args{
-				blog: From("..\\sample_repo", &RenderConfig{
-					OutputDir:   "..\\out",
-					TemplateDir: "..\\template",
-				}),
-				config: RenderConfig{
-					OutputDir:   "..\\out",
-					TemplateDir: "..\\template",
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := Render(tt.args.blog, tt.args.config); (err != nil) != tt.wantErr {
-				t.Errorf("Render() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}

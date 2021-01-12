@@ -1,12 +1,12 @@
 {{ block header() }}
     <div class="header">
-        <h1><a href="./index.html">{{ .Info.Title }}</a></h1>
+        <h1><a href="/index.html">{{ .Info.Title }}</a></h1>
         <p class="bio"><small>{{ .Info.Bio }}</small></p>
         <ul>
-            <li><small><a href="./index.html">Posts</a></small></li>
+            <li><small><a href="/index.html">Posts</a></small></li>
             {*      <li><small><a href="/category.html">Category</a></small></li>*}
-            <li><small><a href="./about.html">About</a></small></li>
-            <li><small><a href="./friends.html">Friends</a></small></li>
+            <li><small><a href="/about.html">About</a></small></li>
+            <li><small><a href="/friends.html">Friends</a></small></li>
         </ul>
     </div>
 {{ end }}

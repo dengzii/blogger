@@ -1,6 +1,6 @@
 {
   "title": "dengzi's blog",
   "Keywords": "dengzii, dengzii's blog",
-  "Favicon": "favicon.icon",
+  "Favicon": "./static/favicon.icon",
   "Bio": "just code it."
 }

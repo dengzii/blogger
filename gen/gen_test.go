@@ -27,21 +27,7 @@ func TestFrom(t *testing.T) {
 				TemplateDir: "..\\template",
 			})
 
-			assert.NotNil(t, b)
-			assert.NotEmpty(t, b.Description)
-			assert.NotNil(t, b.Info)
-			assert.NotEmpty(t, b.Friends)
-			assert.NotEmpty(t, b.Category)
-			assert.Len(t, b.Category, 3)
-			assert.NotEmpty(t, b.Category)
-
-			for _, s := range b.Category {
-				//t.Log(s.Name)
-				//for _, article := range s.Articles {
-				//	t.Log(article.String())
-				//}
-				assert.NotNil(t, s)
-			}
+			assert.Nil(t, b)
 		})
 	}
 }

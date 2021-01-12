@@ -1,6 +1,8 @@
 package gen
 
 import (
+	"blogger/logger"
+	"blogger/utils"
 	"bytes"
 	"errors"
 	"github.com/CloudyKit/jet"
@@ -118,10 +120,12 @@ func (that *RenderConfig) validate() error {
 		that.TemplateDir += pathSep
 	}
 
+	that.OutputDir = strings.ReplaceAll(that.OutputDir, "\\", pathSep)
+	that.TemplateDir = strings.ReplaceAll(that.TemplateDir, "\\", pathSep)
 	return nil
 }
 
-func Render(blog *Blog, config RenderConfig) error {
+func Render(blog *Blog, config *RenderConfig) error {
 
 	if err := config.validate(); err != nil {
 		// error
@@ -169,26 +173,48 @@ func Render(blog *Blog, config RenderConfig) error {
 	return nil
 }
 
-func renderArticle(blog *Blog, template *ArticleTemplate, a *Article, config RenderConfig) error {
+func renderArticle(blog *Blog, template *ArticleTemplate, article *Article, config *RenderConfig) error {
 
-	categoryDir := config.OutputDir + pathSep + a.Category.AlternativeName
-	articleOutput := categoryDir + pathSep + a.AlternativeName + ".html"
+	categoryDir := config.OutputDir + pathSep + article.Category.AlternativeName
+	articleOutput := categoryDir + pathSep + article.AlternativeName + ".html"
 
-	if strings.HasSuffix(a.file.name, ".html") {
-		srcF, err := os.OpenFile(a.file.path, os.O_RDONLY, os.ModePerm)
+	if strings.HasSuffix(article.file.name, ".html") {
+		srcF, err := os.OpenFile(article.file.path, os.O_RDONLY, os.ModePerm)
+		defer func() {
+			if srcF != nil {
+				srcF.Close()
+			}
+		}()
 		if err != nil {
 			return err
 		}
-		_ = os.Remove(articleOutput)
-		dstF, err := os.OpenFile(articleOutput, os.O_CREATE, os.ModePerm)
+
+		var mod int
+		exist, _ := utils.Exist(articleOutput)
+		if exist {
+			err = os.Truncate(articleOutput, 0)
+			if err != nil {
+				logger.Err("render.renderArticle", err)
+			}
+			mod = os.O_WRONLY
+		} else {
+			mod = os.O_CREATE
+		}
+		dstF, err := os.OpenFile(articleOutput, mod, os.ModePerm)
+		defer func() {
+			if dstF != nil {
+				dstF.Close()
+			}
+		}()
 		if err != nil {
 			return err
 		}
+
 		if _, err := io.Copy(dstF, srcF); err != nil {
 			return err
 		}
 	} else {
-		cnt, err := a.file.read()
+		cnt, err := article.file.read()
 		if err != nil {
 			return err
 		}
@@ -211,13 +237,13 @@ func renderArticle(blog *Blog, template *ArticleTemplate, a *Article, config Ren
 			bt = append(bt, b)
 		}
 
-		a.Content = string(bt)
+		article.Content = string(bt)
 		variables := struct {
 			Article *Article
 			Info    *BlogInfo
 		}{
 			Info:    blog.Info,
-			Article: a,
+			Article: article,
 		}
 
 		if err := template.Render(variables, articleOutput); err != nil {
@@ -228,7 +254,7 @@ func renderArticle(blog *Blog, template *ArticleTemplate, a *Article, config Ren
 	return nil
 }
 
-func renderIndex(blog *Blog, config RenderConfig) error {
+func renderIndex(blog *Blog, config *RenderConfig) error {
 
 	indexTemplate := IndexTemplate{&BlogTemplate{
 		Name:      "template_index",
@@ -262,7 +288,7 @@ func renderIndex(blog *Blog, config RenderConfig) error {
 	return indexTemplate.Render(templateVariable, indexOutput)
 }
 
-func renderFriends(blog *Blog, config RenderConfig) error {
+func renderFriends(blog *Blog, config *RenderConfig) error {
 
 	friendsTemplate := BlogTemplate{
 		Name: "template_friends",
@@ -283,7 +309,7 @@ func renderFriends(blog *Blog, config RenderConfig) error {
 	return nil
 }
 
-func renderAbout(blog *Blog, config RenderConfig) error {
+func renderAbout(blog *Blog, config *RenderConfig) error {
 
 	aboutTemplate := BlogTemplate{
 		Name: "template_about",

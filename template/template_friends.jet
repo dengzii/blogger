@@ -6,6 +6,8 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8" content="text/html">
+    <meta name="keywords" content="{{ .Info.Keywords }}">
+    <meta name="description" content="{{ .Info.Desc }}"/>
     <title>{{ .Info.Title }}</title>
     {{ yield head() }}
 </head>

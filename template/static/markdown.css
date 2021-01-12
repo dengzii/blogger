@@ -31,15 +31,15 @@ pre code {
 }
 
 strong, b{
-    color: #BF360C;
+    color: #000;
 }
 
 em, i {
-    color: #009688;
+    color: #333;
 }
 
 hr {
-    border: 1px solid #BF360C;
+    border: 1px solid #009688;
     margin: 1.5em auto;
 }
 
@@ -101,22 +101,26 @@ blockquote::before, blockquote::after, q::before, q::after {
 
 .main h1,.main h2, h3{
     font-weight: bold;
-    color: #009688;
+    color: #000;
     padding: 0.5em 0 ;
+}
+
+.main h2, h3{
+    color: #333;
 }
 
 h3, h4, h5, h6{
     font-weight: bold;
-    color: #009688;
+    color: #333;
 }
 
 .article-content h1 {
     font-size: 24px !important;
-    border-bottom: 1px solid #ddd !important;
+    border-bottom: 3px solid #ccc !important;
 }
 
 .main h2 {
-    border-bottom: 1px solid #eee !important;
+    border-bottom: 1px solid #aaa !important;
 }
 
 h3 {
@@ -126,7 +130,6 @@ h3 {
 h4 {
     font-size: 16px;
 }
-
 
 table {
     padding: 0;

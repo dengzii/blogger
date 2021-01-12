@@ -13,15 +13,15 @@ var (
 type GitConfig struct {
 	Repo        string
 	AccessToken string
+	Dir         string
 }
 
 type BlogConfig struct {
-	Title       string
-	Template    string
-	Site        string
-	Port        int
-	Host        string
-	AccessToken string
+	Template           string
+	Port               int
+	Host               string
+	WebHookAccessToken string
+	Dir                string
 }
 
 type config struct {
