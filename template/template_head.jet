@@ -1,0 +1,6 @@
+{{ block head() }}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Merriweather+Sans:400,300,700" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="./static/app.css" type="text/css" rel="stylesheet">
+    <link rel="shortcut icon" href="{{ .Info.Favicon }}">
+{{ end }}

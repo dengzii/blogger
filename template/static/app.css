@@ -4,7 +4,10 @@ body {
     min-width: 100%;
     min-height: 100%;
     background-color: #fafffe;
-    font-family: 'Merriweather Sans', "Microsoft YaHei UI", Verdana, Arial, "Lucida Console", sans-serif;
+    font-family: 'Merriweather Sans', Verdana, Arial, "Lucida Console",
+    STHeiti,
+    SimHei,
+    "Microsoft Sans Serif", "Microsoft YaHei", "Microsoft YaHei UI", sans-serif;
 }
 
 a {
@@ -16,8 +19,8 @@ a:hover {
     color: #8BC34A;
 }
 
-code {
-
+code, kbd, pre, samp {
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 ul {
@@ -34,7 +37,7 @@ ul {
 
 .header > h1 {
     text-transform: uppercase;
-    font-weight: 40;
+    font-weight: 500;
 }
 
 .header > ul > li {
@@ -59,7 +62,7 @@ ul {
 .post-created-at {
     line-height: 22px;
     margin-right: 8px;
-    font-family: "Nirmala UI","Andale Mono",Arial, monospace;
+    font-weight: lighter;
 }
 
 .post-title {
@@ -67,7 +70,7 @@ ul {
     min-width: 300px;
 }
 
-.post-category{
+.post-category {
     color: #333;
 }
 
@@ -118,6 +121,10 @@ ul {
     max-width: 1000px;
 }
 
+.article-content > img {
+    max-width: 1000px;
+}
+
 .article-info {
     line-height: 24px;
 }
@@ -126,7 +133,7 @@ ul {
     color: #aaa;
 }
 
-.article-title{
+.article-title {
 
 }
 

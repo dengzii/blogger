@@ -44,7 +44,7 @@ hr {
 }
 
 .main p {
-    margin: 1.5em 5px !important;
+
 }
 
 table, pre, dl, blockquote, q, .main  ul, ol {
@@ -99,13 +99,18 @@ blockquote::before, blockquote::after, q::before, q::after {
     content: none;
 }
 
-.main h1,.main  h2, h3, h4, h5, h6 {
+.main h1,.main h2, h3{
     font-weight: bold;
     color: #009688;
     padding: 0.5em 0 ;
 }
 
-.main h1 {
+h3, h4, h5, h6{
+    font-weight: bold;
+    color: #009688;
+}
+
+.article-content h1 {
     font-size: 24px !important;
     border-bottom: 1px solid #ddd !important;
 }
