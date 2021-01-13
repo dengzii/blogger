@@ -5,6 +5,7 @@ import (
 	"blogger/utils"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ type Category struct {
 
 type About struct {
 	Content string
-	file    *descriptionFile
+	file    *aboutMeFile
 }
 
 type Blog struct {
@@ -73,15 +74,30 @@ func (that *Article) String() string {
 
 func From(dir string, renderConfig *RenderConfig) error {
 
+	if !utils.ExistF(renderConfig.OutputDir) {
+		_ = os.Mkdir(renderConfig.OutputDir, os.ModePerm)
+	}
+
 	if err := renderConfig.validate(); err != nil {
 		return err
 	}
 
-	staticSrc := renderConfig.TemplateDir + "static"
-	staticDst := renderConfig.OutputDir + "static"
+	staticSrc := path.Join(renderConfig.TemplateDir, "static")
+	staticDst := path.Join(renderConfig.OutputDir, "static")
 
-	if err := utils.CopyDir(staticSrc, staticDst); err != nil {
-		return err
+	if utils.ExistF(staticSrc) {
+		if err := os.RemoveAll(staticDst); err != nil {
+			return err
+		}
+		logger.D("gen.from", "copy static src="+staticSrc+", dest="+staticDst)
+		if err := utils.CopyDir(staticSrc, staticDst); err != nil {
+			return err
+		}
+
+		repoStatic := path.Join(dir, "static")
+		if utils.ExistF(repoStatic) {
+			_ = utils.CopyDir(path.Join(dir, "static"), staticDst)
+		}
 	}
 
 	bf, err := parse(dir)
@@ -108,8 +124,8 @@ func From(dir string, renderConfig *RenderConfig) error {
 	}
 
 	var desc string
-	if bf.description != nil {
-		desc, err = bf.description.readString()
+	if bf.aboutMe != nil {
+		desc, err = bf.aboutMe.readString()
 		if err != nil {
 			desc = ""
 		}
@@ -130,7 +146,7 @@ func From(dir string, renderConfig *RenderConfig) error {
 	b := &Blog{
 		Category:    categories,
 		Friends:     friends,
-		Description: &About{file: bf.description, Content: desc},
+		Description: &About{file: bf.aboutMe, Content: desc},
 		Info:        blogInfo,
 	}
 	err = Render(b, renderConfig)

@@ -2,12 +2,9 @@ package repo
 
 import (
 	"blogger/logger"
-	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/go-git/go-git/v5/storage/filesystem"
 	"os"
 )
 
@@ -33,7 +30,7 @@ type Auth struct {
 
 const (
 	remoteName = "origin"
-	depth      = 2
+	depth      = 1
 )
 
 func New(url string, accessToken string, gitDir string) UniversalRepo {
@@ -82,10 +79,10 @@ func (that *UniversalRepo) Remove() {
 
 func (that *UniversalRepo) Clone() bool {
 
-	fs := osfs.New(that.GitDir)
-	storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
+	//fs := osfs.New(that.GitDir)
+	//storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
 
-	repo, err := git.Clone(storage, fs, &git.CloneOptions{
+	repo, err := git.PlainClone(that.GitDir, false, &git.CloneOptions{
 		URL:           that.Url,
 		Progress:      that.out,
 		Auth:          that.auth,

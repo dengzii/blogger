@@ -1,3 +1,5 @@
 {{ block footer() }}
-    <div class="footer">this is footer</div>
+    <div class="footer">
+
+    </div>
 {{ end }}

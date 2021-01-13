@@ -162,7 +162,7 @@ func (that *siteFile) md5() (string, error) {
 // Check and parse specified dir to blogFile.
 func parse(sourceDir string) (bf *blogFile, err error) {
 
-	sourceDir = strings.TrimRight(sourceDir, pathSep)
+	sourceDir = strings.TrimRight(sourceDir, "/")
 	i, e := os.Stat(sourceDir)
 
 	if e != nil {
@@ -182,7 +182,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 		return
 	}
 
-	ignoreFileInfo, err := os.Stat(sourceDir + pathSep + typeFileNameMap[typeIgnore])
+	ignoreFileInfo, err := os.Stat(sourceDir + "/" + typeFileNameMap[typeIgnore])
 	if err == nil {
 		ignoreFile := toSiteFile(sourceDir, ignoreFileInfo)
 		bf.ignore = &ignoreFile
@@ -236,11 +236,13 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 			case typeArticle:
 				// ignore root
 			case typeAboutMe:
-				bf.description = &descriptionFile{&f}
+				bf.aboutMe = &aboutMeFile{&f}
 			case typeSiteInfo:
 				bf.siteInfo = &siteInfoFile{&f}
 			case typeFriends:
 				bf.friend = &friendsFile{&f}
+			case typeIgnore:
+				bf.ignore = &f
 			}
 		}
 	}
@@ -249,11 +251,11 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 }
 
 type blogFile struct {
-	friend      *friendsFile
-	siteInfo    *siteInfoFile
-	description *descriptionFile
-	ignore      *siteFile
-	category    []categoryFile
+	friend   *friendsFile
+	siteInfo *siteInfoFile
+	aboutMe  *aboutMeFile
+	ignore   *siteFile
+	category []categoryFile
 	*siteFile
 }
 
@@ -292,7 +294,7 @@ func (that siteInfoFile) readBlogInfo() (*BlogInfo, error) {
 	return &info, nil
 }
 
-type descriptionFile struct {
+type aboutMeFile struct {
 	*siteFile
 }
 

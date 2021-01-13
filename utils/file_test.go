@@ -18,8 +18,8 @@ func TestCopyDir(t *testing.T) {
 				src  string
 				dest string
 			}{
-				src:  "..\\template\\static",
-				dest: "..\\out\\static",
+				src:  "../template/static",
+				dest: "../out/static",
 			},
 			wantErr: false,
 		},

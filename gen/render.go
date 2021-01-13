@@ -120,8 +120,6 @@ func (that *RenderConfig) validate() error {
 		that.TemplateDir += pathSep
 	}
 
-	that.OutputDir = strings.ReplaceAll(that.OutputDir, "\\", pathSep)
-	that.TemplateDir = strings.ReplaceAll(that.TemplateDir, "\\", pathSep)
 	return nil
 }
 
