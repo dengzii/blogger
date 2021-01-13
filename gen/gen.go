@@ -169,19 +169,19 @@ func fileToArticle(aFile articleFile, outDir string, category *Category) *Articl
 	}
 	articleName := aFile.name[:strings.LastIndex(aFile.name, ".")]
 
-	out := outDir + category.AlternativeName + pathSep + aFile.alternativeName + ".html"
-	outInfo, err := os.Stat(out)
-
-	if err == nil {
-		aFile.createTime = getCreateTime(outInfo)
-	} else {
-		aFile.createTime = aFile.modTime
-	}
+	//out := outDir + category.AlternativeName + pathSep + aFile.alternativeName + ".html"
+	//outInfo, err := os.Stat(out)
+	//
+	//if err == nil {
+	//	aFile.createTime = utils.GetCreateTime(outInfo)
+	//} else {
+	//	aFile.createTime = aFile.modTime
+	//}
 
 	return &Article{
 		Title:                   articleName,
 		UpdatedAt:               aFile.modTime.Format("2006-01-02"),
-		CreatedAt:               aFile.createTime.Format("2006-01-02 15:04"),
+		CreatedAt:               aFile.createTime.Format("2006-01-02"),
 		Category:                category,
 		AlternativeCategoryName: category.AlternativeName,
 		AlternativeName:         aFile.alternativeName,

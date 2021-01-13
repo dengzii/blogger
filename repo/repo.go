@@ -4,6 +4,7 @@ import (
 	"blogger/logger"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"os"
 )
@@ -90,8 +91,32 @@ func (that *UniversalRepo) Clone() bool {
 		ReferenceName: plumbing.NewBranchReferenceName(that.DefaultBranch),
 		SingleBranch:  true,
 		NoCheckout:    false,
-		Depth:         depth,
+		//Depth:         depth,
 	})
+
+	//ref, _ := repo.Head()
+	s := "LCD1602_IIC/pi_status.py"
+	cLog, e := repo.Log(&git.LogOptions{
+		FileName: &s,
+	})
+	checkError(e, "=")
+
+	cLog.ForEach(func(commit *object.Commit) error {
+		logger.D("---", commit.Author.When.Format("2006-01-02 15:01"))
+		return nil
+	})
+
+	//objs, err := repo.Objects()
+	//if err == nil {
+	//	_ = objs.ForEach(func(object object.Object) error {
+	//		logger.D("repo.clone", object.ID().String())
+	//		logger.D("repo.clone", object.Type().String())
+	//		if object.Type() == plumbing.BlobObject {
+	//			object.Decode()
+	//		}
+	//		return nil
+	//	})
+	//}
 
 	if checkError(err, "clone") {
 		return false

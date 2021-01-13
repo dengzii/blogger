@@ -420,10 +420,11 @@ func toSiteFile(parentDir string, info os.FileInfo) siteFile {
 	}
 
 	return siteFile{
-		name:     info.Name(),
-		fileType: t,
-		path:     path,
-		modTime:  info.ModTime(),
+		name:       info.Name(),
+		fileType:   t,
+		path:       path,
+		modTime:    info.ModTime(),
+		createTime: getFileCreateTime(info),
 	}
 }
 
@@ -431,9 +432,9 @@ func getFileCreateTime(info os.FileInfo) time.Time {
 	osType := runtime.GOOS
 	switch osType {
 	case "windows":
-		getCreateTime(info)
+		utils.GetCreateTime(info)
 	case "linux":
-		getCreateTime(info)
+		utils.GetCreateTime(info)
 	}
 	return time.Now()
 }
