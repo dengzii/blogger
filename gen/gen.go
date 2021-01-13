@@ -94,10 +94,11 @@ func From(dir string, renderConfig *RenderConfig) error {
 			return err
 		}
 
-		repoStatic := path.Join(dir, "static")
-		if utils.ExistF(repoStatic) {
-			_ = utils.CopyDir(path.Join(dir, "static"), staticDst)
-		}
+	}
+
+	repoStatic := path.Join(dir, "static")
+	if utils.ExistF(repoStatic) {
+		_ = utils.CopyDir(path.Join(dir, "static"), staticDst)
 	}
 
 	bf, err := parse(dir)
