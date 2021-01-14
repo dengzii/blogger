@@ -2,11 +2,15 @@ package repo
 
 import (
 	"blogger/logger"
+	"blogger/utils"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"io/ioutil"
 	"os"
+	"path"
+	"time"
 )
 
 type Repo interface {
@@ -94,37 +98,55 @@ func (that *UniversalRepo) Clone() bool {
 		//Depth:         depth,
 	})
 
-	//ref, _ := repo.Head()
-	s := "LCD1602_IIC/pi_status.py"
-	cLog, e := repo.Log(&git.LogOptions{
-		FileName: &s,
-	})
-	checkError(e, "=")
-
-	cLog.ForEach(func(commit *object.Commit) error {
-		logger.D("---", commit.Author.When.Format("2006-01-02 15:01"))
-		return nil
-	})
-
-	//objs, err := repo.Objects()
-	//if err == nil {
-	//	_ = objs.ForEach(func(object object.Object) error {
-	//		logger.D("repo.clone", object.ID().String())
-	//		logger.D("repo.clone", object.Type().String())
-	//		if object.Type() == plumbing.BlobObject {
-	//			object.Decode()
-	//		}
-	//		return nil
-	//	})
-	//}
-
-	if checkError(err, "clone") {
+	if checkError(err, "repo.clone") {
 		return false
 	}
-	that.repo = repo
-	logger.D("git.clone", "done")
+	logger.D("rep.clone", "done")
 
+	that.repo = repo
+	err = that.changeTime("")
+	checkError(err, "repo.clone")
+
+	logger.D("repo.ctime", "done")
 	return true
+}
+
+func (that *UniversalRepo) changeTime(dir string) error {
+
+	fs, err := ioutil.ReadDir(path.Join(that.GitDir, dir))
+	if err != nil {
+		return err
+	}
+	for _, info := range fs {
+		if info.IsDir() {
+			_ = that.changeTime(path.Join(dir, info.Name()))
+			continue
+		}
+		fPath := path.Join(dir, info.Name())
+		cLog, e := that.repo.Log(&git.LogOptions{
+			FileName: &fPath,
+		})
+		if e == nil {
+			var cTime *time.Time
+			var mTime *time.Time
+			e = cLog.ForEach(func(commit *object.Commit) error {
+				if mTime == nil {
+					mt := commit.Author.When
+					mTime = &mt
+				}
+				ct := commit.Author.When
+				cTime = &ct
+				return nil
+			})
+			cLog.Close()
+			checkError(e, "repo.ctime")
+			if cTime != nil && mTime != nil {
+				e = utils.ChangeFileTimeAttr(path.Join(that.GitDir, fPath), cTime, nil, mTime)
+				checkError(e, "repo.ctime")
+			}
+		}
+	}
+	return nil
 }
 
 func (that *UniversalRepo) Pull() {
@@ -133,7 +155,7 @@ func (that *UniversalRepo) Pull() {
 		panic("no repository")
 	}
 	wt, err := that.repo.Worktree()
-	if checkError(err, "pull.wt") {
+	if checkError(err, "repo.pull") {
 		return
 	}
 	err = wt.Pull(&git.PullOptions{
@@ -148,7 +170,7 @@ func (that *UniversalRepo) Pull() {
 	if checkError(err, "pull") {
 		return
 	}
-	logger.D("git.pull", "done")
+	logger.D("repo.pull", "done")
 }
 
 func (that *UniversalRepo) Exist() bool {

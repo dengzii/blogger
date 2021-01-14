@@ -13,7 +13,20 @@ func GetCreateTime(info os.FileInfo) time.Time {
 	return time.Unix(stat.Ctim.Sec, 0)
 }
 
-func SetCreateTime(info os.FileInfo, t time.Time) {
+func ChangeFileTimeAttr(path string, cTime *time.Time, aTime *time.Time, mTime *time.Time) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
 	stat := info.Sys().(*syscall.Stat_t)
-	stat.Ctim = t.Unix()
+	if cTime != nil {
+		stat.Ctim = syscall.NsecToTimespec(cTime.UnixNano())
+	}
+	if aTime != nil {
+		stat.Atim = syscall.NsecToTimespec(aTime.UnixNano())
+	}
+	if mTime != nil {
+		stat.Mtim = syscall.NsecToTimespec(mTime.UnixNano())
+	}
+	return syscall.Stat(path, stat)
 }

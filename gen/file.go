@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -424,17 +423,6 @@ func toSiteFile(parentDir string, info os.FileInfo) siteFile {
 		fileType:   t,
 		path:       path,
 		modTime:    info.ModTime(),
-		createTime: getFileCreateTime(info),
+		createTime: utils.GetCreateTime(info),
 	}
-}
-
-func getFileCreateTime(info os.FileInfo) time.Time {
-	osType := runtime.GOOS
-	switch osType {
-	case "windows":
-		utils.GetCreateTime(info)
-	case "linux":
-		utils.GetCreateTime(info)
-	}
-	return time.Now()
 }
