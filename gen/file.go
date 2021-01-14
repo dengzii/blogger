@@ -59,7 +59,6 @@ func init() {
 
 	for i, ele := range excludeFiles {
 		s := strings.ReplaceAll(ele, "/", pathSep)
-		s = strings.TrimRight(s, pathSep)
 		excludeFiles[i] = s
 	}
 }
@@ -187,7 +186,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 		bf.ignore = &ignoreFile
 		igStr, err := bf.ignore.readString()
 		if err == nil {
-			lines := strings.Split(igStr, "\r\n")
+			lines := strings.Split(igStr, "\n")
 			for _, line := range lines {
 				line = strings.ReplaceAll(line, "/", pathSep)
 				excludeFiles = append(excludeFiles, strings.TrimSpace(line))
@@ -207,7 +206,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 			cateFile := categoryFile{
 				siteFile:        &dirFile,
 				article:         []articleFile{},
-				alternativeName: utils.Md5Str(dirFile.name)[:8],
+				alternativeName: getAltName(&dirFile),
 			}
 			articleFileInfos, e := ioutil.ReadDir(dirFile.path)
 			if e != nil {
@@ -223,7 +222,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 				aSiteFile := toSiteFile(dirFile.path, fi)
 
 				cateArticles = append(cateArticles, articleFile{
-					alternativeName: utils.Md5Str(aSiteFile.name[:strings.LastIndex(aSiteFile.name, ".")])[:8],
+					alternativeName: getAltName(&aSiteFile),
 					siteFile:        &aSiteFile,
 				})
 			}
@@ -344,6 +343,16 @@ type categoryFile struct {
 	*siteFile
 	article         []articleFile
 	alternativeName string
+}
+
+func getAltName(file *siteFile) string {
+	if file.fileType == typeCategory || file.fileType == typeDir {
+		res := strings.TrimLeft(file.name, " ")
+		res = strings.TrimRight(res, " ")
+		res = strings.ReplaceAll(res, " ", "-")
+		return res
+	}
+	return utils.Md5Str(file.name[:strings.LastIndex(file.name, ".")])[:8]
 }
 
 func contains(slice []string, item ...string) bool {
