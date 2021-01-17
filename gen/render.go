@@ -314,12 +314,30 @@ func renderAbout(blog *Blog, config *RenderConfig) error {
 	}
 	output := config.OutputDir + pathSep + "about.html"
 
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(blog.Description.Content), &buf); err != nil {
+		return err
+	}
+
+	var bt []byte
+	for true {
+		b, e := buf.ReadByte()
+		if e != nil {
+			if e != io.EOF {
+				return e
+			} else {
+				break
+			}
+		}
+		bt = append(bt, b)
+	}
+
 	var templateVariable = struct {
 		Info  *BlogInfo
 		About string
 	}{
 		Info:  blog.Info,
-		About: blog.Description.Content,
+		About: string(bt),
 	}
 
 	if err := aboutTemplate.Render(templateVariable, output); err != nil {
