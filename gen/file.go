@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"blogger/repo"
 	"blogger/utils"
 	"bufio"
 	"crypto/md5"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -67,8 +69,8 @@ type siteFile struct {
 	name       string
 	fileType   int
 	path       string
-	modTime    time.Time
-	createTime time.Time
+	modTime    *time.Time
+	createTime *time.Time
 }
 
 func (that *siteFile) validate() error {
@@ -169,7 +171,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 
 	sf := toSiteFile(strings.TrimRight(sourceDir, i.Name()), i)
 	bf = &blogFile{
-		siteFile: &sf,
+		siteFile: sf,
 		category: []categoryFile{},
 	}
 
@@ -183,7 +185,7 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 	ignoreFileInfo, err := os.Stat(sourceDir + "/" + typeFileNameMap[typeIgnore])
 	if err == nil {
 		ignoreFile := toSiteFile(sourceDir, ignoreFileInfo)
-		bf.ignore = &ignoreFile
+		bf.ignore = ignoreFile
 		igStr, err := bf.ignore.readString()
 		if err == nil {
 			lines := strings.Split(igStr, "\n")
@@ -204,9 +206,9 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 			dirFile := toSiteFile(sourceDir, fileInfo)
 			dirFile.fileType = typeCategory
 			cateFile := categoryFile{
-				siteFile:        &dirFile,
+				siteFile:        dirFile,
 				article:         []articleFile{},
-				alternativeName: getAltName(&dirFile),
+				alternativeName: getAltName(dirFile),
 			}
 			articleFileInfos, e := ioutil.ReadDir(dirFile.path)
 			if e != nil {
@@ -221,9 +223,15 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 				}
 				aSiteFile := toSiteFile(dirFile.path, fi)
 
+				gitInfo, err := repo.Repository.GetFileInfo(path.Join(dirFile.name, fi.Name()))
+				if err == nil {
+					aSiteFile.createTime = gitInfo.CreateAt
+					aSiteFile.modTime = gitInfo.UpdatedAt
+				}
+
 				cateArticles = append(cateArticles, articleFile{
-					alternativeName: getAltName(&aSiteFile),
-					siteFile:        &aSiteFile,
+					alternativeName: getAltName(aSiteFile),
+					siteFile:        aSiteFile,
 				})
 			}
 			cateFile.article = cateArticles
@@ -234,13 +242,13 @@ func parse(sourceDir string) (bf *blogFile, err error) {
 			case typeArticle:
 				// ignore root
 			case typeAboutMe:
-				bf.aboutMe = &aboutMeFile{&f}
+				bf.aboutMe = &aboutMeFile{f}
 			case typeSiteInfo:
-				bf.siteInfo = &siteInfoFile{&f}
+				bf.siteInfo = &siteInfoFile{f}
 			case typeFriends:
-				bf.friend = &friendsFile{&f}
+				bf.friend = &friendsFile{f}
 			case typeIgnore:
-				bf.ignore = &f
+				bf.ignore = f
 			}
 		}
 	}
@@ -404,7 +412,7 @@ func skipFile(fileInfo os.FileInfo) bool {
 	return !fileInfo.IsDir()
 }
 
-func toSiteFile(parentDir string, info os.FileInfo) siteFile {
+func toSiteFile(parentDir string, info os.FileInfo) *siteFile {
 
 	path := parentDir + pathSep + info.Name()
 	t := typeUnknown
@@ -427,11 +435,12 @@ func toSiteFile(parentDir string, info os.FileInfo) siteFile {
 		t = fileNameTypeMap[info.Name()]
 	}
 
-	return siteFile{
+	modTime := info.ModTime()
+	return &siteFile{
 		name:       info.Name(),
 		fileType:   t,
 		path:       path,
-		modTime:    info.ModTime(),
-		createTime: utils.GetCreateTime(info),
+		modTime:    &modTime,
+		createTime: &modTime,
 	}
 }

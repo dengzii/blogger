@@ -19,6 +19,8 @@ type Repo interface {
 	Clone()
 }
 
+var Repository *UniversalRepo
+
 type UniversalRepo struct {
 	Url           string
 	GitDir        string
@@ -33,25 +35,33 @@ type Auth struct {
 	http.TokenAuth
 }
 
+type GitFileInfo struct {
+	Author    string
+	Email     string
+	CreateAt  *time.Time
+	UpdatedAt *time.Time
+}
+
 const (
 	remoteName = "origin"
 	depth      = 1
 )
 
-func New(url string, accessToken string, gitDir string) UniversalRepo {
+func New(url string, accessToken string, gitDir string) *UniversalRepo {
 	var auth *http.TokenAuth
 	if len(accessToken) != 0 {
 		auth = &http.TokenAuth{
 			Token: accessToken,
 		}
 	}
-	return UniversalRepo{
+	Repository = &UniversalRepo{
 		Url:           url,
 		GitDir:        gitDir,
 		DefaultBranch: "master",
 		out:           os.Stdout,
 		auth:          auth,
 	}
+	return Repository
 }
 
 func (that *UniversalRepo) Update() {
@@ -109,6 +119,33 @@ func (that *UniversalRepo) Clone() bool {
 
 	logger.D("repo.ctime", "done")
 	return true
+}
+
+func (that *UniversalRepo) GetFileInfo(file string) (*GitFileInfo, error) {
+
+	cLog, e := that.repo.Log(&git.LogOptions{
+		FileName: &file,
+	})
+	if e == nil {
+		var cTime *time.Time
+		var lastCommit *object.Commit
+		e = cLog.ForEach(func(commit *object.Commit) error {
+			if lastCommit == nil {
+				lastCommit = commit
+			}
+			ct := commit.Author.When
+			cTime = &ct
+			return nil
+		})
+		cLog.Close()
+		return &GitFileInfo{
+			Author:    lastCommit.Author.Name,
+			Email:     lastCommit.Author.Email,
+			CreateAt:  cTime,
+			UpdatedAt: &lastCommit.Author.When,
+		}, nil
+	}
+	return nil, e
 }
 
 func (that *UniversalRepo) changeTime(dir string) error {

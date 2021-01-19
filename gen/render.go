@@ -270,7 +270,7 @@ func renderIndex(blog *Blog, config *RenderConfig) error {
 	sort.Slice(allArticle, func(i, j int) bool {
 		ai := allArticle[i]
 		aj := allArticle[j]
-		return ai.file.createTime.After(aj.file.createTime)
+		return ai.file.createTime.After(*aj.file.createTime)
 	})
 
 	indexOutput := config.OutputDir + pathSep + "index.html"

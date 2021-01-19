@@ -13,6 +13,7 @@ func GetCreateTime(info os.FileInfo) time.Time {
 	return time.Unix(stat.Ctim.Sec, 0)
 }
 
+// FIXME: change time on linux not work.
 func ChangeFileTimeAttr(path string, cTime *time.Time, aTime *time.Time, mTime *time.Time) error {
 	info, err := os.Stat(path)
 	if err != nil {
