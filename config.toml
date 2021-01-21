@@ -1,7 +1,7 @@
 [Git]
-Repo = ""
+Repo = "https://hub.fastgit.org/dengzii/blog-article.git"
 AccessToken = ""
-Dir = "./repo"
+Dir = "./repo1"
 
 [Blog]
 Host = "0.0.0.0"
