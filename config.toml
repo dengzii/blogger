@@ -1,11 +1,16 @@
 [Git]
 Repo = "https://hub.fastgit.org/dengzii/blog-article.git"
+# The github access token
 AccessToken = ""
+# The directory of git repository clone to.
 Dir = "./repo1"
 
 [Blog]
 Host = "0.0.0.0"
 Port = 8080
+# The blog template directory
 Template = "./template"
+# The site html output directory
 Dir = "./out"
+# The AcceccToken paramter of webhook trigger
 WebHookAccessToken = "abcd"

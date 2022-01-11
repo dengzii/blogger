@@ -1,42 +1,43 @@
 # Blogger
 
-一个用 golang 实现的从 git 仓库生成静态博客的 webhook 服务.
+一个用 golang 实现的从 git 仓库生成静态博客的 webhook 服务, 让博客搭建, 发布, 更新更加便捷.
 
-## 部署
+## 快速部署
 
-下载最新的可执行程序。
+在 [这里](https://github.com/dengzii/blogger/releases/) 找到最新的版本连接
 
-配置信息 config.toml
-
-```toml
-[Git]
-# 仓库地址
-Repo = ""
-# 如果是私有的须配置 
-AccessToken = ""
-# 仓库下载本地位置
-Dir = "./repo"
-
-[Blog]
-Host = "0.0.0.0"
-Port = 8080
-# 站点模板位置
-Template = "./repo/template"
-# 站点输出位置
-Dir = "./out"
-# webhook 触发 token
-WebHookAccessToken = "abcd"
-```
-
-启动服务
-
+1. 下载
 ```shell
-nohup ./main >> log.output &
+wget https://github.com/dengzii/blogger/releases/download/v1.1.0/blogger-v1.1.0.rar
 ```
+2. 解压
+```shell
+tar -C /blogger -xzvf blogger-v1.1.0.tar.gz
+```
+3. 在 config.toml 中配置你的博客仓库及 webhook 服务信息
+```shell
+cd blogger
+vim config.toml
+```
+4. 配置 nginx, 代理 webhook 服务
+```shell
+server {
+    listen 8082;
+    server_name _;
+    access_log /srv/blog/nginx.log;
+    location / {
+        proxy_pass http://127.0.0.1:8088;
+    }
+}
+```
+5. 运行
+```shell
+chmod -R 777 blogger run.sh
+./run.sh
+```
+6. 在 GitHub 配置 webhook, 每次推送将自动更新博客内容
 
-## 配置 Github
-
-在GitHub配置好 webhook 后, 每次推送将触发服务，自动生成静态内容。
+https://github.com/用户名称/仓库名称/settings/hooks/new
 
 ```text
 Repository > Settings > Webhooks > Add Webhooks 
