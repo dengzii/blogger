@@ -47,7 +47,7 @@ jobs:
           prerelease: false
 
       - name: build TAR PACKAGE
-        run: tar -czvf go_im.tar.gz blogger
+        run: tar -czvf blogger.tar.gz blogger
 
       - name: Upload Release Asset
         id: upload-release-asset
